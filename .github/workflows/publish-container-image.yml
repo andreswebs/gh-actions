@@ -83,8 +83,8 @@ jobs:
         shell: bash
 
     env:
-      IMAGE_TAG: ${{ github.sha }} ## all images will be tagged with the commit SHA hash
-      IMAGE_DEFAULT_TAG: latest ## this is indeed supposed to track whatever is the latest built image
+      IMAGE_TAG: ${{ github.sha }}  ## all images will be tagged with the commit SHA hash
+      IMAGE_DEFAULT_TAG: latest  ## this is indeed supposed to track whatever is the latest built image
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     outputs:

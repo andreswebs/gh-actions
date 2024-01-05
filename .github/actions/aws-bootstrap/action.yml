@@ -1,0 +1,48 @@
+---
+name: AWS
+
+description: |
+  Sets up AWS CLI.
+
+inputs:
+  aws-region:
+    description: AWS Region
+    required: true
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - name: Check if AWS CLI is installed
+      shell: bash
+      id: aws-cli
+      run: |
+        if ! command -v aws &> /dev/null; then
+          echo "result=not_installed" >> $GITHUB_OUTPUT
+        else
+          echo "result=installed" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install dependencies if not present
+      shell: bash
+      if: contains(steps.aws-cli.outputs.result, 'not_installed')
+      run: |
+        if ! command -v curl &> /dev/null; then
+          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get install --yes --quiet curl
+        fi
+        if ! command -v unzip &> /dev/null; then
+          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get install --yes --quiet unzip
+        fi
+
+    - name: Install AWS CLI
+      if: contains(steps.aws-cli.outputs.result, 'not_installed')
+      uses: quipper/setup-aws-cli-action@main
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}

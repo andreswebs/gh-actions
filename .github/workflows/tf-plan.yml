@@ -1,0 +1,204 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      working-directory:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      tfbackend:
+        required: true
+        type: string
+      tfplan:
+        required: false
+        type: string
+        default: this.tfplan
+      tfvars:
+        required: false
+        type: string
+        default: null
+      images-matrix-enabled:
+        required: false
+        type: boolean
+        default: false
+
+    outputs:
+      tfplan:
+        description: The filename used to save the `.tfplan` file
+        value: ${{ jobs.tf-plan.outputs.tfplan }}
+      fmt-outcome:
+        description: Outcome of `terraform fmt -check`
+        value: ${{ jobs.tf-plan.outputs.fmt-outcome }}
+      init-outcome:
+        description: Outcome of `terraform init`
+        value: ${{ jobs.tf-plan.outputs.init-outcome }}
+      validate-outcome:
+        description: Outcome of `terraform validate`
+        value: ${{ jobs.tf-plan.outputs.validate-outcome }}
+      plan-outcome:
+        description: Outcome of `terraform plan`
+        value: ${{ jobs.tf-plan.outputs.plan-outcome }}
+
+# concurrency:
+#   group: ${{ github.repository_id }}-${{ inputs.environment }}
+#   cancel-in-progress: false
+
+jobs:
+
+  images-list:
+    if: ${{ inputs.tfvars && inputs.images-matrix-enabled }}
+    name: Build images list
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    outputs:
+      images: ${{ steps.images-list.outputs.list }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download .tfvars
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.tfvars }}
+          path: ${{ inputs.working-directory }}
+
+      - name: Get list from .tfvars
+        id: images-list
+        uses: andreswebs/gh-actions/.github/actions/list-from-tfvars@dev
+        with:
+          tfvars: ${{ inputs.working-directory }}/${{ inputs.tfvars }}
+
+  images-env-tags:
+    if: ${{ inputs.tfvars && inputs.images-matrix-enabled }}
+    needs: [images-list]
+    name: Add env tag to images
+    runs-on: ${{ inputs.runs-on }}
+
+    strategy:
+      matrix:
+        image-uri: ${{ fromJson(needs.images-list.outputs.images) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+
+      - name: Add env tag
+        id: env-tag
+        uses: andreswebs/gh-actions/.github/actions/ecr-add-env-tag@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume-shared-ecr }}
+          environment: ${{ inputs.environment }}
+          image-uri: ${{ matrix.image-uri }}
+
+  tf-plan:
+    name: TF Plan - ${{ inputs.environment }}
+
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    outputs:
+      tfplan: ${{ steps.tf-plan.outputs.tfplan }}
+      fmt-outcome: ${{ steps.outcomes.outputs.fmt-outcome }}
+      init-outcome: ${{ steps.outcomes.outputs.init-outcome }}
+      validate-outcome: ${{ steps.outcomes.outputs.validate-outcome }}
+      plan-outcome: ${{ steps.outcomes.outputs.plan-outcome }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup AWS
+        uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Download .tfvars
+        if: inputs.tfvars
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.tfvars }}
+          path: ${{ inputs.working-directory }}
+
+      - name: TF Bootstrap
+        id: init
+        uses: andreswebs/gh-actions/.github/actions/tf-bootstrap@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          tfbackend: ${{ inputs.tfbackend }}
+
+      - name: Format .tfvars
+        if: inputs.tfvars
+        run: |
+          terraform fmt ${{ inputs.tfvars }}
+
+      - name: TF Format Check
+        id: fmt
+        run: |
+          terraform fmt -recursive -check
+
+      - name: TF Validation
+        id: validate
+        run: |
+          terraform validate -no-color
+
+      - name: TF Plan - ${{ inputs.tfplan }}
+        id: tf-plan
+        run: |
+          terraform plan -input=false -no-color -out=${{ inputs.tfplan }}
+          echo "tfplan=${{ inputs.tfplan }}" >> $GITHUB_OUTPUT
+
+      - name: Static analysis
+        uses: andreswebs/gh-actions/.github/actions/tf-check@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          tfplan: ${{ steps.tf-plan.outputs.tfplan }}
+
+      - name: Record outcomes
+        id: outcomes
+        run: |
+          echo "fmt-outcome=${{ steps.fmt.outcome }}" >> $GITHUB_OUTPUT
+          echo "init-outcome=${{ steps.init.outcome }}" >> $GITHUB_OUTPUT
+          echo "validate-outcome=${{ steps.validate.outcome }}" >> $GITHUB_OUTPUT
+          echo "plan-outcome=${{ steps.tf-plan.outcome }}" >> $GITHUB_OUTPUT
+
+      - name: Save ${{ steps.tf-plan.outputs.tfplan }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.tf-plan.outputs.tfplan }}
+          path: ${{ inputs.working-directory }}/${{ steps.tf-plan.outputs.tfplan }}
+          if-no-files-found: error
+
+      - name: Report
+        uses: andreswebs/gh-actions/.github/actions/tf-report@main
+        with:
+          environment: ${{ inputs.environment }}
+          working-directory: ${{ inputs.working-directory }}
+          tfplan: ${{ steps.tf-plan.outputs.tfplan }}
+          fmt-outcome: ${{ steps.outcomes.outputs.fmt-outcome }}
+          init-outcome: ${{ steps.outcomes.outputs.init-outcome }}
+          validate-outcome: ${{ steps.outcomes.outputs.validate-outcome }}
+          plan-outcome: ${{ steps.outcomes.outputs.plan-outcome }}

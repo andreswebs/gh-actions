@@ -1,0 +1,95 @@
+---
+name: ECR add env tag
+description: Add custom formatted env tag to ECR image
+
+inputs:
+  aws-region:
+    description: AWS Region
+    required: true
+  role-to-assume:
+    description: IAM Role to assume for ECR commands
+    required: true
+  environment:
+    decription: The environment name to use
+    required: true
+  image-uri:
+    description: The existing image URI to be tagged
+    required: true
+
+outputs:
+  value:
+    description: "The updated full image URI"
+    value: ${{ steps.add-tag.outputs.image }}
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - name: Set up scripts
+      shell: bash
+      run: |
+        SCRIPTS_PATH="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPTS_PATH}/parse-image-uri.sh"
+        chmod +x "${SCRIPTS_PATH}/add-image-tag.sh"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
+    - name: Install dependencies if not present
+      shell: bash
+      run: |
+        if ! command -v jq &> /dev/null; then
+          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get install --yes --quiet jq
+        fi
+
+    - name: Parse image URI
+      shell: bash
+      id: parse-image-uri
+      env:
+        IMAGE_URI: ${{ inputs.image-uri }}
+      run: |
+        OUT=$(parse-image-uri.sh "${IMAGE_URI}")
+        REGISTRY=$(echo "${OUT}" | jq --raw-output '.registry')
+        REPO_NAME=$(echo "${OUT}" | jq --raw-output '.repo_name')
+        TAG=$(echo "${OUT}" | jq --raw-output '.tag')
+        echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
+        echo "repo-name=${REPO_NAME}" >> $GITHUB_OUTPUT
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+    - name: Build env tag
+      shell: bash
+      id: env-tag
+      env:
+        ENV_NAME: ${{ inputs.environment }}
+        COMMIT_HASH: ${{ github.sha }}
+      run: |
+        TIMESTAMP=$(date -u +%s)
+        ENV_TAG="${ENV_NAME}-${COMMIT_HASH}-${TIMESTAMP}"
+        echo "value=${ENV_TAG}" >> $GITHUB_OUTPUT
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        role-chaining: true
+
+    - name: Add env tag
+      shell: bash
+      id: add-tag
+      env:
+        REGISTRY: ${{ steps.parse-image-uri.outputs.registry }}
+        REPO_NAME: ${{ steps.parse-image-uri.outputs.repo-name }}
+        EXISTING_TAG: ${{ steps.parse-image-uri.outputs.tag }}
+        NEW_TAG: ${{ steps.env-tag.outputs.value }}
+      run: |
+        add-image-tag.sh "${REPO_NAME}" "${EXISTING_TAG}" "${NEW_TAG}"
+        IMAGE="${REGISTRY}/${REPO_NAME}:${NEW_TAG}"
+        echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+
+    - name: Unset AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        unset-current-credentials: true
+        aws-region: ${{ inputs.aws-region }}

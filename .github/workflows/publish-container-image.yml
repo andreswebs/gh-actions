@@ -1,0 +1,179 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: true
+        type: string
+      ecr-repo-name:
+        required: true
+        type: string
+
+      context-dir:
+        required: true
+        type: string
+
+      matrix-step-name:
+        required: false
+        type: string
+        default: null
+
+      matrix-key:
+        required: false
+        type: string
+        default: null
+
+      config-artifact:
+        required: false
+        type: string
+        default: null
+        description: |
+          Name of an artifact file containing repository-specific
+          configurations, to be saved in the specified directory.
+
+      config-dir:
+        required: false
+        type: string
+        default: null
+        description: |
+          Directory where the configuration artifact will
+          be saved.
+
+      arch-platforms:
+        required: false
+        type: string
+        default: linux/amd64
+        description: |
+          Comma-separated string to select image architectures.
+
+      ## `image-artifact` is a workaround for the following bug:
+      ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
+      ## https://github.com/orgs/community/discussions/37942
+      image-artifact:
+        required: false
+        type: string
+        default: image
+        description: |
+          Name of an artifact file that will contain a string with the full
+          image tag to be deployed.
+
+    outputs:
+      image-name:
+        description: The image name relative to the ECR registry, in the format `<REPO_NAME>:<IMAGE_TAG>`
+        value: ${{ jobs.publish.outputs.image-name }}
+      images:
+        description: "Matrix output containing all published images"
+        value: ${{ jobs.publish.outputs.images }}
+
+jobs:
+
+  publish:
+
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      IMAGE_TAG: ${{ github.sha }} ## all images will be tagged with the commit SHA hash
+      IMAGE_DEFAULT_TAG: latest ## this is indeed supposed to track whatever is the latest built image
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      image-name: ${{ steps.image-build.outputs.image-name }}
+      images: ${{ steps.matrix-out.outputs.images }}
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure path exists ${{ inputs.config-dir }}
+        if: ${{ inputs.config-artifact && inputs.config-dir }}
+        run: |
+          mkdir -p ${{ inputs.config-dir }}
+
+      - name: Download ${{ inputs.config-artifact }}
+        uses: actions/download-artifact@v3
+        if: ${{ inputs.config-artifact && inputs.config-dir }}
+        with:
+          name: ${{ inputs.config-artifact }}
+          path: ${{ inputs.config-dir }}
+
+      - name: Setup AWS
+        uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Amazon ECR
+        if: ${{ github.event_name != 'pull_request' }}
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Format image names
+        id: image-names
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          CONTAINER_REPO_BASE_NAME="${{ inputs.ecr-repo-name }}"
+          IMAGE_TAG="${{ env.IMAGE_TAG }}"
+          IMAGE_DEFAULT_TAG="${{ env.IMAGE_DEFAULT_TAG }}"
+          if [ "${EVENT}" != "pull_request" ]; then
+            CONTAINER_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+            CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
+          else
+            CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
+          fi
+          IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
+          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "images=${IMAGE},${IMAGE_DEFAULT}" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.context-dir }}
+          platforms: ${{ inputs.arch-platforms }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.image-names.outputs.images }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          provenance: false
+
+      ## Workaround for bug:
+      ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
+      ## https://github.com/orgs/community/discussions/37942
+      - name: Save image value
+        if: inputs.image-artifact
+        uses: andreswebs/gh-actions/.github/actions/value-as-artifact@main
+        with:
+          key: ${{ inputs.image-artifact }}
+          value: ${{ steps.image-names.outputs.image }}
+
+      - name: Matrix Outputs
+        id: matrix-out
+        uses: cloudposse/github-action-matrix-outputs-write@main
+        if: ${{ inputs.matrix-step-name && inputs.matrix-key }}
+        with:
+          matrix-step-name: ${{ inputs.matrix-step-name }}
+          matrix-key: ${{ inputs.matrix-key }}
+          outputs: |-
+            images: ${{ steps.image-names.outputs.image }}

@@ -1,0 +1,74 @@
+---
+name: Terraform Report
+
+description: |
+  Create comments on GitHub PRs to display Terraform plan
+  results for further approval.
+
+inputs:
+  working-directory:
+    description: The directory where to run `terraform` commands
+    required: true
+    type: string
+  tfplan:
+    description: Name of the tfplan file to use
+    required: true
+    type: string
+  environment:
+    description: Name of the environment
+    required: false
+    type: string
+    default: null
+  fmt-outcome:
+    description: Outcome of `terraform fmt -check`
+    required: false
+    type: string
+    default: null
+  init-outcome:
+    description: Outcome of `terraform init`
+    required: false
+    type: string
+    default: null
+  validate-outcome:
+    description: Outcome of `terraform validate`
+    required: false
+    type: string
+    default: null
+  plan-outcome:
+    description: Outcome of `terraform plan`
+    required: false
+    type: string
+    default: null
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+        terraform_version: 1.5.7
+
+    - name: Inspect ${{ inputs.tfplan }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        terraform show -no-color ${{ inputs.tfplan }} 2>&1 > ${{ inputs.tfplan }}.txt
+
+    - name: Comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      env:
+        ENV_NAME: ${{ inputs.environment }}
+        OUTCOME_FMT: ${{ inputs.fmt-outcome }}
+        OUTCOME_INIT: ${{ inputs.init-outcome }}
+        OUTCOME_VALIDATE: ${{ inputs.validate-outcome }}
+        OUTCOME_PLAN: ${{ inputs.plan-outcome }}
+        PLAN_TXT: ${{ inputs.working-directory }}/${{ inputs.tfplan }}.txt
+      with:
+        script: |
+          const script = require('${{ github.action_path }}/scripts/tf-comment.js');
+          await script({github, context});

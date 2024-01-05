@@ -15,9 +15,6 @@ on:
       aws-region:
         required: true
         type: string
-      tfbackend:
-        required: true
-        type: string
       tfplan:
         required: false
         type: string

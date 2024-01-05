@@ -1,0 +1,29 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.231.6/containers/debian
+{
+  "name": "example",
+  "image": "mcr.microsoft.com/vscode/devcontainers/universal:latest",
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Set *default* container specific settings.json values on container create.
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.insertFinalNewline": true,
+        // Add the IDs of extensions you want installed when the container is created.
+        "extensions": [
+          "GitHub.copilot"
+        ],
+        "editor.suggestSelection": "first",
+        "files.exclude": {
+          "**/.classpath": true,
+          "**/.project": true,
+          "**/.settings": true,
+          "**/.factorypath": true
+        }
+      }
+    }
+  },
+  "remoteUser": "codespace"
+}

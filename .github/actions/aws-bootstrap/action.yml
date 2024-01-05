@@ -8,6 +8,13 @@ inputs:
   aws-region:
     description: AWS Region
     required: true
+  role-ro-assume:
+    description: AWS IAM role to assume
+    required: false
+  role-chaining:
+    description: Use role chaining?
+    required: false
+    default: 'false'
 
 runs:
 
@@ -43,6 +50,9 @@ runs:
       uses: quipper/setup-aws-cli-action@main
 
     - name: Configure AWS Credentials
+      if: ${{ startsWith('arn:aws:iam::', inputs.role-to-assume) }}
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        role-chaining: ${{ fromJSON(inputs.role-chaining) }}

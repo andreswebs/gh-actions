@@ -39,8 +39,8 @@ runs:
       uses: aws-actions/configure-aws-credentials@v2
       with:
         role-session-name: ${{ inputs.role-session-name }}
-        role-to-assume:  ${{ inputs.role-to-assume }}
-        aws-region:  ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        aws-region: ${{ inputs.aws-region }}
 
     - name: Get GitHub access token from SSM
       id: token

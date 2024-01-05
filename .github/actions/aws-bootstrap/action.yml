@@ -11,6 +11,7 @@ inputs:
   role-ro-assume:
     description: AWS IAM role to assume
     required: false
+    default: ''
   role-chaining:
     description: Use role chaining?
     required: false
@@ -46,11 +47,11 @@ runs:
         fi
 
     - name: Install AWS CLI
-      if: contains(steps.aws-cli.outputs.result, 'not_installed')
+      if: ${{ contains(steps.aws-cli.outputs.result, 'not_installed') }}
       uses: quipper/setup-aws-cli-action@main
 
     - name: Configure AWS Credentials
-      if: ${{ startsWith('arn:aws:iam::', inputs.role-to-assume) }}
+      if: ${{ startsWith(inputs.role-to-assume, 'arn:aws:iam::') }}
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}

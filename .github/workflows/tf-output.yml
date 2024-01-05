@@ -58,7 +58,7 @@ jobs:
 
       - name: Download tfvars
         if: inputs.tfvars
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.tfvars }}
           path: ${{ inputs.working-directory }}

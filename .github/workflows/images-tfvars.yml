@@ -42,7 +42,6 @@ jobs:
             sudo apt-get update 2>&1 > /dev/null
             sudo apt-get install --yes --quiet jq
           fi
-          which jq
 
       - name: Read matrix outputs
         id: read
@@ -54,7 +53,7 @@ jobs:
         id: parse
         run: |
           rm -rf ${{ inputs.tfvars }}
-          echo '${{ steps.read.outputs.result }}' | \jq -r '.images | to_entries[] | "\(.key|gsub("-";"_")) = \"\(.value)\"" | "image_\(.)"' > ${{ inputs.tfvars }}
+          echo '${{ steps.read.outputs.result }}' | jq -r '.images | to_entries[] | "\(.key|gsub("-";"_")) = \"\(.value)\"" | "image_\(.)"' > ${{ inputs.tfvars }}
           echo "images-tfvars=${{ inputs.tfvars }}" >> $GITHUB_OUTPUT
 
       - name: Save ${{ steps.parse.outputs.images-tfvars }}

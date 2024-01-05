@@ -7,14 +7,14 @@
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "GitHub.copilot"
+      ],
       // Set *default* container specific settings.json values on container create.
       "settings": {
         "editor.formatOnSave": true,
         "files.insertFinalNewline": true,
-        // Add the IDs of extensions you want installed when the container is created.
-        "extensions": [
-          "GitHub.copilot"
-        ],
         "editor.suggestSelection": "first",
         "files.exclude": {
           "**/.classpath": true,

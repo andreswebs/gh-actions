@@ -9,6 +9,9 @@ inputs:
   role-to-assume:
     description: IAM Role to assume for ECR commands
     required: true
+  role-chaining:
+    required: false
+    default: "false"
   environment:
     decription: The environment name to use
     required: true
@@ -73,7 +76,7 @@ runs:
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ inputs.role-to-assume }}
-        role-chaining: true
+        role-chaining: ${{ fromJSON(inputs.role-chaining) }}
 
     - name: Add env tag
       shell: bash

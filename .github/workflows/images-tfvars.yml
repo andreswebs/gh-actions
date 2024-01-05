@@ -58,7 +58,7 @@ jobs:
           echo "images-tfvars=${{ inputs.tfvars }}" >> $GITHUB_OUTPUT
 
       - name: Save ${{ steps.parse.outputs.images-tfvars }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.parse.outputs.images-tfvars }}
           path: ${{ steps.parse.outputs.images-tfvars }}

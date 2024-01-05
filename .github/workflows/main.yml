@@ -19,12 +19,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-    - name: Install yamllint if needed
-      shell: bash
-      run: |
-        if ! command -v yamllint &> /dev/null; then
-          sudo pip3 install yamllint 2>&1 > /dev/null
-        fi
+      - name: Install yamllint if needed
+        shell: bash
+        run: |
+          if ! command -v yamllint &> /dev/null; then
+            sudo pip3 install yamllint 2>&1 > /dev/null
+          fi
 
       - name: YAML Lint
         run: yamllint .

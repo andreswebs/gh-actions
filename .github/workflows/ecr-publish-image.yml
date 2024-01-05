@@ -19,6 +19,10 @@ on:
       ecr-repo-name:
         required: true
         type: string
+      image-default-tag:
+        required: false
+        type: string
+        default: latest
 
       context-dir:
         required: true
@@ -41,7 +45,6 @@ on:
         description: |
           Name of an artifact file containing repository-specific
           configurations, to be saved in the specified directory.
-
       config-dir:
         required: false
         type: string
@@ -53,7 +56,7 @@ on:
       arch-platforms:
         required: false
         type: string
-        default: linux/amd64
+        default: linux/arm64
         description: |
           Comma-separated string to select image architectures.
 
@@ -87,8 +90,8 @@ jobs:
         shell: bash
 
     env:
-      IMAGE_TAG: ${{ github.sha }}  ## all images will be tagged with the commit SHA hash
-      IMAGE_DEFAULT_TAG: latest  ## this is indeed supposed to track whatever is the latest built image
+      IMAGE_TAG: ${{ github.sha }}
+      IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     outputs:

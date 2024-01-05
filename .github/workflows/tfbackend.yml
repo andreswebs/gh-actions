@@ -3,6 +3,9 @@ on:
   workflow_call:
 
     inputs:
+      environment:
+        required: true
+        type: string
       runs-on:
         required: true
         type: string
@@ -20,9 +23,6 @@ on:
         required: true
         type: string
       region:
-        required: true
-        type: string
-      environment:
         required: true
         type: string
 
@@ -47,7 +47,7 @@ jobs:
       - name: Render .tfbackend
         id: render
         run: |
-          cat > ./${{ inputs.filename }} << EOF
+          cat > ./${{ inputs.tfbackend }} << EOF
           bucket         = "${{ inputs.bucket }}"
           dynamodb_table = "${{ inputs.table }}"
           key            = "${{ inputs.key }}"
@@ -55,6 +55,7 @@ jobs:
           encrypt        = true
           EOF
           echo "tfbackend=${{ inputs.tfbackend }}" >> $GITHUB_OUTPUT
+
       - name: Save .tfbackend
         uses: actions/upload-artifact@v4
         with:

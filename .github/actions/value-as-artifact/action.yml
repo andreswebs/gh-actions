@@ -1,0 +1,28 @@
+---
+name: Value as Artifact
+description: Save a value as an artifact
+
+inputs:
+  key:
+    description: The artifact key
+    required: true
+  value:
+    description: The artifact value
+    required: true
+
+runs:
+
+  using: composite
+
+  steps:
+    - name: Write artifact
+      shell: bash
+      run: |
+        echo ${{ inputs.value }} > ${{ inputs.key }}
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ inputs.key }}
+        path: ${{ inputs.key }}
+        if-no-files-found: error

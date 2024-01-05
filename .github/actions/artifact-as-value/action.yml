@@ -1,0 +1,30 @@
+---
+name: Artifact as Value
+description: Output the contents of an artifact as a value
+
+inputs:
+  key:
+    description: The artifact key
+    required: true
+
+outputs:
+  value:
+    value: ${{ steps.read.outputs.value }}
+    description: The read value
+
+runs:
+  using: composite
+
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ inputs.key }}
+
+    - name: Output artifact
+      id: read
+      shell: bash
+      run: |
+        FILE=${{ inputs.key }}
+        VALUE=$(cat $FILE)
+        echo "value=${VALUE}" >> $GITHUB_OUTPUT

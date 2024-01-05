@@ -1,0 +1,153 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: true
+        type: string
+      role-to-assume-shared-ecr:
+        required: true
+        type: string
+      cluster-name:
+        required: true
+        type: string
+      kustomization-namespace:
+        required: true
+        type: string
+      kustomization-name:
+        required: true
+        type: string
+      overlay-dir:
+        required: true
+        type: string
+      timeout-seconds:
+        required: false
+        type: number
+        default: 420
+      ## `image-artifact` is a workaround for the following bug:
+      ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
+      ## https://github.com/orgs/community/discussions/37942
+      image-artifact:
+        required: false
+        type: string
+        default: image
+        description: |
+          Name of an artifact file that contains a string with the full
+          image tag to be deployed.
+
+jobs:
+
+  deploy:
+
+    name: Deploy - ${{ inputs.environment }}
+    runs-on: ${{ inputs.runs-on }}
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      ARTIFACT_TAG: ${{ github.sha }}
+      ARTIFACT_DEFAULT_TAG: latest
+      OCI_REPO_PREFIX: config/${{ inputs.cluster-name }}
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get image value
+        id: image-value
+        uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
+        with:
+          key: ${{ inputs.image-artifact }}
+
+      - name: Add env tag
+        id: env-tag
+        uses: andreswebs/gh-actions/.github/actions/ecr-add-env-tag@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume-shared-ecr }}
+          environment: ${{ inputs.environment }}
+          image-uri: ${{ steps.image-value.outputs.value }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: true
+
+      - name: Update kubeconfig
+        env:
+          EKS_CLUSTER_NAME: ${{ inputs.cluster-name }}
+        run: |
+          aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}"
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build configuration
+        env:
+          IMAGE: ${{ steps.env-tag.outputs.value }}
+          OVERLAY_DIR: ${{ inputs.overlay-dir }}
+        run: |
+          KUSTOMIZE_DIR=$(mktemp --directory)
+          echo "KUSTOMIZE_DIR=${KUSTOMIZE_DIR}" >> $GITHUB_ENV
+          IMAGE_BASE=$(echo "${IMAGE}" | cut -d ':' -f 1)
+          cd "${OVERLAY_DIR}" || { echo "unable to access ${OVERLAY_DIR}" && exit 1; }
+          kustomize edit set image "${IMAGE_BASE}=${IMAGE}"
+          kustomize build . > "${KUSTOMIZE_DIR}/k8s.yaml"
+
+      - name: Name OCI artifact
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          KUSTOMIZATION_NAME: ${{ inputs.kustomization-name }}
+          KUSTOMIZATION_NAMESPACE: ${{ inputs.kustomization-namespace }}
+          ARTIFACT_TAG: ${{ env.ARTIFACT_TAG }}
+          ARTIFACT_DEFAULT_TAG: ${{ env.ARTIFACT_DEFAULT_TAG }}
+          OCI_REPO_PREFIX: ${{ env.OCI_REPO_PREFIX }}
+        run: |
+          OCI_REPO="oci://${ECR_REGISTRY}/${OCI_REPO_PREFIX}/${KUSTOMIZATION_NAME}"
+          OCI_ARTIFACT="${OCI_REPO}:${ARTIFACT_TAG}"
+          echo "OCI_REPO=${OCI_REPO}" >> $GITHUB_ENV
+          echo "OCI_ARTIFACT=${OCI_ARTIFACT}" >> $GITHUB_ENV
+          echo "KUSTOMIZATION_NAME=${KUSTOMIZATION_NAME}" >> $GITHUB_ENV
+          echo "KUSTOMIZATION_NAMESPACE=${KUSTOMIZATION_NAMESPACE}" >> $GITHUB_ENV
+
+      - name: Push OCI artifact
+        env:
+          TIMEOUT: ${{ inputs.timeout-seconds }}s
+        run: |
+          SOURCE=$(git config --get remote.origin.url)
+          REVISION=$(git branch --show-current)/$(git rev-parse HEAD)
+          flux push artifact "${OCI_ARTIFACT}" \
+              --provider aws \
+              --path "${KUSTOMIZE_DIR}" \
+              --source "${SOURCE}" \
+              --revision "${REVISION}"
+          flux tag artifact "${OCI_ARTIFACT}" --tag "${ARTIFACT_DEFAULT_TAG}"
+          flux reconcile kustomization \
+              "${KUSTOMIZATION_NAME}" \
+              --with-source \
+              --namespace "${KUSTOMIZATION_NAMESPACE}" \
+              --timeout "${TIMEOUT}"
+
+      - name: Wait for Kustomization
+        uses: andreswebs/gh-actions/.github/actions/flux-kustomization-wait@main
+        with:
+          timeout-seconds: ${{ inputs.timeout-seconds }}
+          namespace: ${{ inputs.kustomization-namespace }}
+          name: ${{ inputs.kustomization-name }}

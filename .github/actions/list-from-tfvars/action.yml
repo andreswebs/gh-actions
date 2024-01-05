@@ -1,0 +1,43 @@
+---
+name: List from tfvars
+description: Create a JSON list from a `.tfvars` file
+
+inputs:
+  tfvars:
+    description: The `.tfvars` file to use
+    required: true
+
+outputs:
+  list:
+    description: The generated list
+    value: ${{ steps.generate-list.outputs.list }}
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - name: Set up scripts
+      shell: bash
+      run: |
+        SCRIPTS_PATH="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPTS_PATH}/list-from-tfvars.sh"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
+    - name: Install dependencies if not present
+      shell: bash
+      run: |
+        if ! command -v jq &> /dev/null; then
+          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get install --yes --quiet jq
+        fi
+
+    - name: Generate list
+      shell: bash
+      id: generate-list
+      env:
+        SOURCE: ${{ inputs.tfvars }}
+      run: |
+        LIST=$(list-from-tfvars.sh "${SOURCE}")
+        echo "list=${LIST}" >> $GITHUB_OUTPUT

@@ -1,0 +1,63 @@
+---
+name: Terraform Bootstrap for AWS
+
+description: |
+  Sets up the Terraform pre-requisites for a project, including AWS credentials.
+  It assumes there is a `.tfbackend` file with the backend configuration in the
+  working directory where `terraform` is run.
+
+inputs:
+  working-directory:
+    description: The directory where to run `terraform` commands
+    type: string
+    required: true
+  tfbackend:
+    description: |
+      Name of a `.tfbackend` file to use;
+      the file must be present in the working directory
+    type: string
+    required: true
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.7
+
+    - name: Install git if not present
+      shell: bash
+      run: |
+        if ! command -v git &> /dev/null; then
+          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get install --yes --quiet git
+        fi
+
+    - name: Configure Terraform plugin cache
+      shell: bash
+      run: |
+        echo 'plugin_cache_dir="${HOME}/.terraform.d/plugin-cache"' > ~/.terraformrc
+        mkdir --parents ~/.terraform.d/plugin-cache
+
+    - name: Cache Terraform plugins
+      uses: actions/cache@v3
+      with:
+        path: ~/.terraform.d/plugin-cache
+        key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
+        restore-keys: |
+          ${{ runner.os }}-terraform-
+
+    - name: TF Init
+      id: tf-init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        terraform init -backend-config=${{ inputs.tfbackend }}

@@ -1,0 +1,73 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: true
+        type: string
+      cluster-name:
+        required: true
+        type: string
+
+      working-directory:
+        required: true
+        type: string
+
+
+jobs:
+
+  apply-kustomization:
+
+    runs-on: ${{ inputs.runs-on }}
+
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup AWS
+        uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: true
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Update kubeconfig
+        env:
+          EKS_CLUSTER_NAME: ${{ inputs.cluster-name }}
+        run: |
+          aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}"
+
+      - name: Apply kustomization
+        env:
+          IMAGE: ${{ steps.image-value.outputs.value }}
+          NAMESPACE: ${{ inputs.namespace }}
+          DEPLOYMENT_NAME: ${{ inputs.deployment-name }}
+          CONTAINER_NAME: ${{ inputs.container-name }}
+        run: |
+          kubectl apply --kustomize .

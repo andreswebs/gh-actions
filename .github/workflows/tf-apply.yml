@@ -1,0 +1,69 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      working-directory:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      tfbackend:
+        required: true
+        type: string
+      tfplan:
+        required: false
+        type: string
+        default: this.tfplan
+
+# concurrency:
+#   group: ${{ github.repository_id }}-${{ inputs.environment }}
+#   cancel-in-progress: false
+
+jobs:
+
+  tf-apply:
+    name: TF Apply - ${{ inputs.environment }}
+
+    runs-on: ${{ inputs.runs-on }}
+
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup AWS
+        uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: TF Bootstrap
+        id: init
+        uses: andreswebs/gh-actions/.github/actions/tf-bootstrap@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          tfbackend: ${{ inputs.tfbackend }}
+
+      - name: Download ${{ inputs.tfplan }}
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.tfplan }}
+          path: ${{ inputs.working-directory }}
+
+      - name: TF Apply - ${{ inputs.tfplan }}
+        run: |
+          terraform apply -auto-approve ${{ inputs.tfplan }}

@@ -1,0 +1,108 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: true
+        type: string
+      cluster-name:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
+      deployment-name:
+        required: true
+        type: string
+      container-name:
+        required: true
+        type: string
+
+      ## `image-artifact` is a workaround for the following bug:
+      ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
+      ## https://github.com/orgs/community/discussions/37942
+      image-artifact:
+        required: false
+        type: string
+        default: image
+        description: |
+          Name of an artifact file that contains a string with the full
+          image tag to be deployed.
+
+jobs:
+
+  deploy:
+    name: Deploy - ${{ inputs.environment }}
+
+    runs-on: ${{ inputs.runs-on }}
+
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get image value
+        id: image-value
+        uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
+        with:
+          key: ${{ inputs.image-artifact }}
+
+      - name: Setup AWS
+        uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: true
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Update kubeconfig
+        env:
+          EKS_CLUSTER_NAME: ${{ inputs.cluster-name }}
+        run: |
+          aws eks update-kubeconfig --name "${EKS_CLUSTER_NAME}"
+
+      - name: Deploy image
+        env:
+          IMAGE: ${{ steps.image-value.outputs.value }}
+          NAMESPACE: ${{ inputs.namespace }}
+          DEPLOYMENT_NAME: ${{ inputs.deployment-name }}
+          CONTAINER_NAME: ${{ inputs.container-name }}
+        run: |
+          kubectl set image \
+              --namespace "${NAMESPACE}" \
+              "deployment/${DEPLOYMENT_NAME}" \
+              "${CONTAINER_NAME}=${IMAGE}"
+
+          check="kubectl rollout status deployment ${DEPLOYMENT_NAME} --namespace ${NAMESPACE}"
+
+          if ! $check; then
+              echo "Deployment error:"
+              kubectl logs "deployment/${DEPLOYMENT_NAME} --namespace ${NAMESPACE}"
+              echo
+              kubectl rollout undo deployment "${DEPLOYMENT_NAME}" --namespace ${NAMESPACE}"
+              kubectl rollout status deployment "${DEPLOYMENT_NAME}" --namespace ${NAMESPACE}"
+              exit 1
+          fi

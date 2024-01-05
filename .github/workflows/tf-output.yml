@@ -1,0 +1,77 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: false
+        type: string
+        default: null
+      working-directory:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      tfbackend:
+        required: true
+        type: string
+      tfvars:
+        required: false
+        type: string
+        default: null
+      output-file:
+        required: true
+        type: string
+
+    outputs:
+      output-file:
+        description: The filename used to save the output text file
+        value: ${{ jobs.tf-output.outputs.output-file }}
+
+jobs:
+
+  tf-output:
+
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    outputs:
+      output-file: ${{ steps.tf-output.outputs.output-file }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup AWS
+        uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Download tfvars
+        if: inputs.tfvars
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.tfvars }}
+          path: ${{ inputs.working-directory }}
+
+      - name: TF Bootstrap
+        id: init
+        uses: andreswebs/gh-actions/.github/actions/tf-bootstrap@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          tfbackend: ${{ inputs.tfbackend }}
+
+      - name: TF Outputs
+        id: tf-output
+        run: |
+          terraform output | tee ${{ inputs.output-file }}
+          echo "output-file=${{ inputs.output-file }}" >> $GITHUB_OUTPUT

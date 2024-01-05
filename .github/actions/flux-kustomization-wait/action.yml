@@ -1,0 +1,32 @@
+---
+name: FluxCD Kustomization Wait
+description: Await for a FluxCD Kustomization to be ready or timeout
+
+inputs:
+  timeout-seconds:
+    description: The timeout value in seconds
+    required: false
+    default: 300
+  name:
+    description: The Kustomization name
+    required: true
+  namespace:
+    description: The Kustomization namespace
+    required: true
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - name: Wait for FluxCD Kustomization
+      shell: bash
+      run: |
+        echo "Waiting for Kustomization"
+        export TIMEOUT_SECONDS="${{ inputs.timeout-seconds }}"
+        export NAME="${{ inputs.name }}"
+        export NAMESPACE="${{ inputs.namespace }}"
+        export SCRIPT="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPT}/flux-kustomization-wait.sh"
+        "${SCRIPT}/flux-kustomization-wait.sh"

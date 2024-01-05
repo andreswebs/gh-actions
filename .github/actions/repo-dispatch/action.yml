@@ -1,0 +1,70 @@
+---
+name: Repository Dispatch
+
+description: |
+  Triggers a `repository_dispatch` event using a token from AWS SSM Parameter Store.
+
+inputs:
+  aws-region:
+    description: AWS Region
+    required: true
+  role-session-name:
+    description: AWS IAM Role session name
+    required: false
+    default: gh-actions
+  role-to-assume:
+    description: AWS IAM Role to assume
+    required: true
+  token-param:
+    description: Name of AWS SSM parameter storing the GitHub access token
+    required: true
+  repository:
+    description: The target repository name in the format `<org>/<repo>`
+    required: true
+  event-type:
+    description: The `event_type` for repository dispatch
+    required: true
+  client-payload:
+    description: The `client_payload` for repository dispatch
+    required: false
+    default: '{}'
+
+runs:
+
+  using: composite
+
+  steps:
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-session-name: ${{ inputs.role-session-name }}
+        role-to-assume:  ${{ inputs.role-to-assume }}
+        aws-region:  ${{ inputs.aws-region }}
+
+    - name: Get GitHub access token from SSM
+      id: token
+      shell: bash
+      env:
+        AWS_PAGER: ''
+        PARAM_NAME: ${{ inputs.token-param }}
+
+      run: |
+        TOKEN=$(
+            aws ssm get-parameter \
+                --name "${PARAM_NAME}" \
+                --with-decryption \
+                --query 'Parameter.Value' \
+                --output text
+        )
+
+        echo "::add-mask::${TOKEN}"
+        echo "token=${TOKEN}" >> $GITHUB_OUTPUT
+
+    - name: Repository Dispatch
+      uses: peter-evans/repository-dispatch@v2
+      with:
+        token: ${{steps.token.outputs.token}}
+        repository: ${{ inputs.repository }}
+        event-type: ${{ inputs.event-type }}
+        client-payload: ${{ inputs.client-payload }}

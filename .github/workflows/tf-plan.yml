@@ -80,7 +80,7 @@ jobs:
 
       - name: Get list from .tfvars
         id: images-list
-        uses: andreswebs/gh-actions/.github/actions/list-from-tfvars@dev
+        uses: andreswebs/gh-actions/.github/actions/list-from-tfvars@main
         with:
           tfvars: ${{ inputs.working-directory }}/${{ inputs.tfvars }}
 

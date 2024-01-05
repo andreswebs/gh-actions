@@ -73,7 +73,7 @@ jobs:
         with:
           aws-region: ${{ inputs.aws-region }}
           role-to-assume: ${{ inputs.role-to-assume }}
-          role-chaining: true
+          role-chaining: ${{ inputs.role-chaining }}
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3

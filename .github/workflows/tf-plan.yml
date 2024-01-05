@@ -26,6 +26,13 @@ on:
         required: false
         type: string
         default: null
+      tfbackend:
+        required: true
+        type: string
+      tfbackend-is-artifact:
+        required: false
+        type: boolean
+        default: false
       images-matrix-enabled:
         required: false
         type: boolean
@@ -137,10 +144,17 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - name: Download .tfvars
-        if: inputs.tfvars
+        if: ${{ inputs.tfvars }}
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.tfvars }}
+          path: ${{ inputs.working-directory }}
+
+      - name: Download .tfbackend
+        if: ${{ inputs.tfbackend-is-artifact }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.tfbackend }}
           path: ${{ inputs.working-directory }}
 
       - name: TF Bootstrap
@@ -151,7 +165,7 @@ jobs:
           tfbackend: ${{ inputs.tfbackend }}
 
       - name: Format .tfvars
-        if: inputs.tfvars
+        if: ${{ inputs.tfvars }}
         run: |
           terraform fmt ${{ inputs.tfvars }}
 

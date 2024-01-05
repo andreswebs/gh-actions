@@ -1,0 +1,59 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      filename:
+        required: false
+        type: string
+        default: this.s3.tfbackend
+      bucket:
+        required: true
+        type: string
+      table:
+        required: true
+        type: string
+      key:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+
+    outputs:
+      filename:
+        description: The filename used to save the backend config
+        value: ${{ jobs.tfbackend.outputs.filename }}
+
+jobs:
+
+  tfbackend:
+
+    runs-on: ${{ inputs.runs-on }}
+
+    outputs:
+      filename: ${{ steps.render.outputs.filename }}
+
+    steps:
+
+      - name: Render ${{ inputs.filename }}
+        id: render
+        run: |
+          cat > ./${{ inputs.filename }} << EOF
+          bucket         = "${{ inputs.bucket }}"
+          dynamodb_table = "${{ inputs.table }}"
+          key            = "${{ inputs.key }}"
+          region         = "${{ inputs.region }}"
+          encrypt        = true
+          EOF
+          echo "filename=${{ inputs.filename }}" >> $GITHUB_OUTPUT
+
+      - name: Save ${{ steps.render.outputs.filename }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.render.outputs.filename }}
+          path: ./${{ steps.render.outputs.filename }}
+          if-no-files-found: error

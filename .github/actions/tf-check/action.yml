@@ -44,7 +44,7 @@ runs:
       uses: hashicorp/setup-terraform@v2
       with:
         terraform_wrapper: false
-        terraform_version: 1.5.7
+        # terraform_version: 1.5.7
 
     - name: Inspect ${{ inputs.tfplan }}
       shell: bash
@@ -67,7 +67,7 @@ runs:
             --output-file-path checkov.results.sarif
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: ${{ inputs.working-directory }}/checkov.results.sarif
         name: checkov.results.sarif

@@ -42,10 +42,6 @@ on:
         required: false
         type: string
         default: null
-      images-matrix-enabled:
-        required: false
-        type: boolean
-        default: false
 
     outputs:
       tfplan:

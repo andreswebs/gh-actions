@@ -22,8 +22,6 @@ on:
 jobs:
 
   images-tfvars:
-    name: Generate Terraform variables
-
     runs-on: ${{ inputs.runs-on }}
 
     defaults:

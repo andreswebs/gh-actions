@@ -9,6 +9,9 @@ on:
       environment:
         required: true
         type: string
+      aws-region:
+        required: true
+        type: string
       role-to-assume:
         required: false
         type: string

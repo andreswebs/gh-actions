@@ -27,7 +27,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
 
     outputs:
       images: ${{ steps.images-list.outputs.list }}
@@ -41,13 +40,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.tfvars }}
-          path: ${{ inputs.working-directory }}
 
       - name: Get list from .tfvars
         id: images-list
         uses: andreswebs/gh-actions/.github/actions/list-from-tfvars@main
         with:
-          tfvars: ${{ inputs.working-directory }}/${{ inputs.tfvars }}
+          tfvars: ${{ inputs.tfvars }}
 
   images-env-tags:
     needs: [images-list]

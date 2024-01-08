@@ -8,7 +8,7 @@ inputs:
   aws-region:
     description: AWS Region
     required: true
-  role-ro-assume:
+  role-to-assume:
     description: AWS IAM role to assume
     required: false
     default: ''

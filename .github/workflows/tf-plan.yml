@@ -23,10 +23,6 @@ on:
         required: false
         type: boolean
         default: false
-      tfplan:
-        required: false
-        type: string
-        default: this.tfplan
       tfvars:
         required: false
         type: string
@@ -38,6 +34,10 @@ on:
         required: false
         type: boolean
         default: false
+      tfplan:
+        required: false
+        type: string
+        default: this.tfplan
       images-tfvars:
         required: false
         type: string

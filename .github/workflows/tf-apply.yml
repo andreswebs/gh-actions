@@ -15,17 +15,29 @@ on:
       aws-region:
         required: true
         type: string
+      role-to-assume:
+        required: false
+        type: string
+        default: null
+      role-chaining:
+        required: false
+        type: boolean
+        default: false
       tfbackend:
         required: true
         type: string
+      tfbackend-is-artifact:
+        required: false
+        type: boolean
+        default: false
       tfplan:
         required: false
         type: string
         default: this.tfplan
 
-# concurrency:
-#   group: ${{ github.repository_id }}-${{ inputs.environment }}
-#   cancel-in-progress: false
+concurrency:
+  group: ${{ github.repository_id }}-${{ inputs.environment }}
+  cancel-in-progress: false
 
 jobs:
 
@@ -50,6 +62,15 @@ jobs:
         uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
         with:
           aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: ${{ inputs.role-chaining }}
+
+      - name: Download .tfbackend
+        if: ${{ inputs.tfbackend-is-artifact }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.tfbackend }}
+          path: ${{ inputs.working-directory }}
 
       - name: TF Bootstrap
         id: init

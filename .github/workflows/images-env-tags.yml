@@ -1,0 +1,76 @@
+---
+on:
+  workflow_call:
+
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      role-to-assume:
+        required: false
+        type: string
+        default: null
+      tfvars:
+        required: false
+        type: string
+        default: images.auto.tfvars
+
+jobs:
+
+  images-list:
+    name: Build images list
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    outputs:
+      images: ${{ steps.images-list.outputs.list }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download .tfvars
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.tfvars }}
+          path: ${{ inputs.working-directory }}
+
+      - name: Get list from .tfvars
+        id: images-list
+        uses: andreswebs/gh-actions/.github/actions/list-from-tfvars@main
+        with:
+          tfvars: ${{ inputs.working-directory }}/${{ inputs.tfvars }}
+
+  images-env-tags:
+    needs: [images-list]
+    name: Add env tag to images
+    runs-on: ${{ inputs.runs-on }}
+
+    environment: ${{ inputs.environment }}
+
+    strategy:
+      matrix:
+        image-uri: ${{ fromJson(needs.images-list.outputs.images) }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+
+      - name: Add env tag
+        id: env-tag
+        uses: andreswebs/gh-actions/.github/actions/ecr-add-env-tag@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          environment: ${{ inputs.environment }}
+          image-uri: ${{ matrix.image-uri }}

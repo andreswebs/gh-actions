@@ -74,6 +74,6 @@ runs:
 
     - name: Upload SARIF file
       if: ${{ inputs.upload-sarif }}
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: ${{ inputs.working-directory }}/checkov.results.sarif

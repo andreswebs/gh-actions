@@ -93,6 +93,7 @@ runs:
 
     - name: Unset AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
+      continue-on-error: true
       with:
         unset-current-credentials: true
         aws-region: ${{ inputs.aws-region }}

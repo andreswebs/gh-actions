@@ -1,0 +1,60 @@
+---
+name: Put SSM Parameter
+description: Create or update an SSM parameter
+
+inputs:
+  aws-region:
+    description: AWS Region
+    required: true
+  role-to-assume:
+    description: IAM role to assume
+    required: true
+  role-chaining:
+    description: (Optional) Enable role chaining?
+    required: false
+    default: "false"
+  parameter_name:
+    description: The parameter name
+    required: true
+  parameter_value:
+    description: The parameter value
+    required: true
+  parameter_type:
+    description: The parameter type
+    required: false
+    default: "SecureString"
+
+runs:
+  using: composite
+
+  steps:
+    - name: Set up scripts
+      shell: bash
+      run: |
+        SCRIPTS_PATH="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPTS_PATH}/aws-ssm-put-param.sh"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        role-chaining: ${{ fromJSON(inputs.role-chaining) }}
+
+    - name: Put SSM parameter
+      shell: bash
+      id: put-param
+      env:
+        PARAM_NAME: ${{ inputs.parameter_name }}
+        PARAM_VALUE: ${{ inputs.vparameter_alue }}
+        PARAM_TYPE: ${{ inputs.parameter_type }}
+      run: |
+        aws-ssm-put-param.sh "${PARAM_NAME}" "${PARAM_VALUE}" "${PARAM_TYPE}"
+
+    - name: Unset AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      continue-on-error: true
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        unset-current-credentials: true

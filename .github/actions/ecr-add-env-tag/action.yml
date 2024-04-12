@@ -10,10 +10,11 @@ inputs:
     description: IAM Role to assume for ECR commands
     required: true
   role-chaining:
+    description: (Optional) Enable role chaining?
     required: false
     default: "false"
   environment:
-    decription: The environment name to use
+    description: The environment name to use
     required: true
   image-uri:
     description: The existing image URI to be tagged
@@ -25,11 +26,9 @@ outputs:
     value: ${{ steps.add-tag.outputs.image }}
 
 runs:
-
   using: composite
 
   steps:
-
     - name: Set up scripts
       shell: bash
       run: |

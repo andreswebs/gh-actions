@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -31,24 +30,24 @@ on:
       matrix-step-name:
         required: false
         type: string
-        default: null
+        default: ""
 
       matrix-key:
         required: false
         type: string
-        default: null
+        default: ""
 
       config-artifact:
         required: false
         type: string
-        default: null
+        default: ""
         description: |
           Name of an artifact file containing repository-specific
           configurations, to be saved in the specified directory.
       config-dir:
         required: false
         type: string
-        default: null
+        default: ""
         description: |
           Directory where the configuration artifact will
           be saved.
@@ -80,9 +79,7 @@ on:
         value: ${{ jobs.publish.outputs.images }}
 
 jobs:
-
   publish:
-
     runs-on: ${{ inputs.runs-on }}
 
     defaults:
@@ -99,7 +96,6 @@ jobs:
       images: ${{ steps.matrix-out.outputs.images }}
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 

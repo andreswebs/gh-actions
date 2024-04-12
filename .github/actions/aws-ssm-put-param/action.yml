@@ -47,7 +47,7 @@ runs:
       id: put-param
       env:
         PARAM_NAME: ${{ inputs.parameter_name }}
-        PARAM_VALUE: ${{ inputs.vparameter_alue }}
+        PARAM_VALUE: ${{ inputs.parameter_value }}
         PARAM_TYPE: ${{ inputs.parameter_type }}
       run: |
         aws-ssm-put-param.sh "${PARAM_NAME}" "${PARAM_VALUE}" "${PARAM_TYPE}"

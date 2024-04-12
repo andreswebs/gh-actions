@@ -78,6 +78,13 @@ on:
         description: "Matrix output containing all published images"
         value: ${{ jobs.publish.outputs.images }}
 
+    ## used for compatibility w/ repos that store these values as secrets
+    secrets:
+      AWS_REGION:
+        required: false
+      AWS_IAM_ROLE_ARN:
+        required: false
+
 jobs:
   publish:
     runs-on: ${{ inputs.runs-on }}

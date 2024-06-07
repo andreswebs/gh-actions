@@ -11,18 +11,16 @@ inputs:
   role-to-assume:
     description: AWS IAM role to assume
     required: false
-    default: ''
+    default: ""
   role-chaining:
     description: Use role chaining?
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
-
   using: composite
 
   steps:
-
     - name: Check if AWS CLI is installed
       shell: bash
       id: aws-cli
@@ -38,20 +36,35 @@ runs:
       if: contains(steps.aws-cli.outputs.result, 'not_installed')
       run: |
         if ! command -v curl &> /dev/null; then
-          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get update > /dev/null 2>&1
           sudo apt-get install --yes --quiet curl
         fi
         if ! command -v unzip &> /dev/null; then
-          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get update > /dev/null 2>&1
           sudo apt-get install --yes --quiet unzip
         fi
 
+    - name: Set up scripts
+      shell: bash
+      if: contains(steps.aws-cli.outputs.result, 'not_installed')
+      run: |
+        SCRIPTS_PATH="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPTS_PATH}/install-awscliv2"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
     - name: Install AWS CLI
-      if: ${{ contains(steps.aws-cli.outputs.result, 'not_installed') }}
+      if: contains(steps.aws-cli.outputs.result, 'not_installed')
       uses: quipper/setup-aws-cli-action@main
 
+    - name: Install AWS CLI
+      if: contains(steps.aws-cli.outputs.result, 'not_installed')
+      shell: bash
+      id: install
+      run: |
+        sudo install-awscliv2
+
     - name: Configure AWS Credentials
-      if: ${{ startsWith(inputs.role-to-assume, 'arn:aws:iam::') }}
+      if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}

@@ -22,6 +22,10 @@ on:
         required: false
         type: string
         default: latest
+      add-image-default-tag:
+        required: false
+        type: boolean
+        default: false
 
       context-dir:
         required: true
@@ -135,6 +139,7 @@ jobs:
         id: image-names
         env:
           EVENT: ${{ github.event_name }}
+          ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
         run: |
           CONTAINER_REPO_BASE_NAME="${{ inputs.ecr-repo-name }}"
           IMAGE_TAG="${{ env.IMAGE_TAG }}"
@@ -147,8 +152,14 @@ jobs:
           fi
           IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
           IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
-          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-          echo "images=${IMAGE},${IMAGE_DEFAULT}" >> $GITHUB_OUTPUT
+          if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
+            IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
+            echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+            echo "images=${IMAGE},${IMAGE_DEFAULT}" >> $GITHUB_OUTPUT
+          else
+            echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+            echo "images=${IMAGE}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build and push
         uses: docker/build-push-action@v5

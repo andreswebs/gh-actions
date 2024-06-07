@@ -19,11 +19,9 @@ inputs:
     required: true
 
 runs:
-
   using: composite
 
   steps:
-
     - uses: actions/setup-node@v3
       with:
         node-version: 20
@@ -35,7 +33,7 @@ runs:
       shell: bash
       run: |
         if ! command -v git &> /dev/null; then
-          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get update > /dev/null 2>&1
           sudo apt-get install --yes --quiet git
         fi
 

@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           if ! command -v yamllint &> /dev/null; then
-            sudo pip3 install yamllint 2>&1 > /dev/null
+            sudo pip3 install yamllint > /dev/null 2>&1
           fi
 
       - name: YAML Lint

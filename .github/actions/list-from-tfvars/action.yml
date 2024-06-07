@@ -13,11 +13,9 @@ outputs:
     value: ${{ steps.generate-list.outputs.list }}
 
 runs:
-
   using: composite
 
   steps:
-
     - name: Set up scripts
       shell: bash
       run: |
@@ -29,7 +27,7 @@ runs:
       shell: bash
       run: |
         if ! command -v jq &> /dev/null; then
-          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get update > /dev/null 2>&1
           sudo apt-get install --yes --quiet jq
         fi
 

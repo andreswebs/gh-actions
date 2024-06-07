@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -20,7 +19,6 @@ on:
         value: ${{ jobs.images-tfvars.outputs.tfvars }}
 
 jobs:
-
   images-tfvars:
     runs-on: ${{ inputs.runs-on }}
 
@@ -32,12 +30,11 @@ jobs:
       tfvars: ${{ steps.parse.outputs.images-tfvars }}
 
     steps:
-
       - name: Install jq if not present
         shell: bash
         run: |
           if ! command -v jq &> /dev/null; then
-            sudo apt-get update 2>&1 > /dev/null
+            sudo apt-get update > /dev/null 2>&1
             sudo apt-get install --yes --quiet jq
           fi
 

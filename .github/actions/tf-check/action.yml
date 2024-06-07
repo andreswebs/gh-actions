@@ -29,7 +29,7 @@ runs:
       shell: bash
       run: |
         if ! command -v jq &> /dev/null; then
-          sudo apt-get update 2>&1 > /dev/null
+          sudo apt-get update > /dev/null 2>&1
           sudo apt-get install --yes --quiet jq
         fi
 
@@ -37,7 +37,7 @@ runs:
       shell: bash
       run: |
         if ! command -v checkov &> /dev/null; then
-          sudo pip3 install checkov 2>&1 > /dev/null
+          sudo pip3 install checkov > /dev/null 2>&1
         fi
 
     - name: Set up Terraform

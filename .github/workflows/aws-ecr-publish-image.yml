@@ -1,4 +1,5 @@
 ---
+# yamllint disable-line rule:truthy
 on:
   workflow_call:
     inputs:
@@ -26,6 +27,14 @@ on:
         required: false
         type: boolean
         default: false
+      use-short-hash:
+        required: false
+        type: boolean
+        default: false
+      short-hash-length:
+        required: false
+        type: number
+        default: 7
 
       context-dir:
         required: true
@@ -90,11 +99,6 @@ jobs:
       run:
         shell: bash
 
-    env:
-      IMAGE_TAG: ${{ github.sha }}
-      IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     outputs:
       image-name: ${{ steps.image-build.outputs.image-name }}
       images: ${{ steps.matrix-out.outputs.images }}
@@ -139,19 +143,24 @@ jobs:
         id: image-names
         env:
           EVENT: ${{ github.event_name }}
+          USE_SHORT_HASH: ${{ inputs.use-short-hash }}
+          SHORT_HASH_LENGTH: ${{ inputs.short-hash-length }}
+          IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
           ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
+          CONTAINER_REPO_BASE_NAME: ${{ inputs.ecr-repo-name }}
         run: |
-          CONTAINER_REPO_BASE_NAME="${{ inputs.ecr-repo-name }}"
-          IMAGE_TAG="${{ env.IMAGE_TAG }}"
-          IMAGE_DEFAULT_TAG="${{ env.IMAGE_DEFAULT_TAG }}"
-          if [ "${EVENT}" != "pull_request" ]; then
+          if [ "${USE_SHORT_HASH}" = "true" ]; then
+            IMAGE_TAG="${GITHUB_SHA::${SHORT_HASH_LENGTH}}"
+          else
+            IMAGE_TAG="${GITHUB_SHA}"
+          fi
+          if [ "${EVENT}" = "pull_request" ]; then
+            CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
+          else
             CONTAINER_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
             CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
-          else
-            CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
           fi
           IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
-          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
           if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
             IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
             echo "image=${IMAGE}" >> $GITHUB_OUTPUT

@@ -33,28 +33,14 @@ async function githubComment({ github, context }) {
 
   let output = '';
 
-  output += `## Terraform Summary${envComment}\n\n`;
-  if (OUTCOME_FMT) output += `#### Format and Style: **${OUTCOME_FMT}**\n`;
-  if (OUTCOME_INIT) output += `#### Initialization: **${OUTCOME_INIT}**\n`;
-  if (OUTCOME_VALIDATE) output += `#### Validation: **${OUTCOME_VALIDATE}**\n`;
-  if (OUTCOME_PLAN) output += `#### Plan: **${OUTCOME_PLAN}**\n`;
 
-  await github.rest.issues.createComment({
-    issue_number: context.issue.number,
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    body: output
-  });
+  if (chunks.length) {
 
-  for (let i = 0; i < plans.length; i++) {
-    output = `## Terraform Plan${envComment} - Part ${i + 1} of ${plans.length}\n\n`;
-    output += '<details>\n\n';
-    output += '<summary>Show Plan</summary>\n\n';
-    output += '```\n\n';
-    output += `${plans[i]}\n\n`;
-    output += '```\n\n';
-    output += '</details>\n\n';
-    output += `**Triggered by @${context.actor}, on Event \`${context.eventName}\`**\n`;
+    output += `## Terraform Summary${envComment}\n\n`;
+    if (OUTCOME_FMT) output += `#### Format and Style: **${OUTCOME_FMT}**\n`;
+    if (OUTCOME_INIT) output += `#### Initialization: **${OUTCOME_INIT}**\n`;
+    if (OUTCOME_VALIDATE) output += `#### Validation: **${OUTCOME_VALIDATE}**\n`;
+    if (OUTCOME_PLAN) output += `#### Plan: **${OUTCOME_PLAN}**\n`;
 
     await github.rest.issues.createComment({
       issue_number: context.issue.number,
@@ -62,6 +48,25 @@ async function githubComment({ github, context }) {
       repo: context.repo.repo,
       body: output
     });
+
+    for (let i = 0; i < plans.length; i++) {
+      output = `## Terraform Plan${envComment} - Part ${i + 1} of ${plans.length}\n\n`;
+      output += '<details>\n\n';
+      output += '<summary>Show Plan</summary>\n\n';
+      output += '```\n\n';
+      output += `${plans[i]}\n\n`;
+      output += '```\n\n';
+      output += '</details>\n\n';
+      output += `**Triggered by @${context.actor}, on Event \`${context.eventName}\`**\n`;
+
+      await github.rest.issues.createComment({
+        issue_number: context.issue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        body: output
+      });
+    }
+
   }
 
 }

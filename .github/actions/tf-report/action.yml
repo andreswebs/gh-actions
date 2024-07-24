@@ -9,43 +9,34 @@ inputs:
   working-directory:
     description: The directory where to run `terraform` commands
     required: true
-    type: string
   tfplan:
     description: Name of the tfplan file to use
     required: true
-    type: string
   environment:
     description: Name of the environment
     required: false
-    type: string
-    default: null
+    default: ""
   fmt-outcome:
     description: Outcome of `terraform fmt -check`
     required: false
-    type: string
-    default: null
+    default: ""
   init-outcome:
     description: Outcome of `terraform init`
     required: false
-    type: string
-    default: null
+    default: ""
   validate-outcome:
     description: Outcome of `terraform validate`
     required: false
-    type: string
-    default: null
+    default: ""
   plan-outcome:
     description: Outcome of `terraform plan`
     required: false
-    type: string
-    default: null
+    default: ""
 
 runs:
-
   using: composite
 
   steps:
-
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v2
       with:

@@ -32,11 +32,7 @@ async function githubComment({ github, context }) {
 
   let output = '';
 
-  console.log('TEST 1');
-
   if (chunks.length) {
-
-    console.log('TEST 2');
 
     output += `## ${commentHeader}${envComment}\n\n`;
 
@@ -48,7 +44,7 @@ async function githubComment({ github, context }) {
     });
 
     for (let i = 0; i < chunks.length; i++) {
-      output = `## ${envComment ? envComment + ' -' : ''}Part ${i + 1} of ${chunks.length}\n\n`;
+      output = `## ${ENV_NAME ? ENV_NAME + ' -' : ''}Part ${i + 1} of ${chunks.length}\n\n`;
       output += '<details>\n\n';
       output += `<summary>${summaryHeader}</summary>\n\n`;
       output += '```\n\n';

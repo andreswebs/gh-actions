@@ -1,0 +1,159 @@
+---
+name: Publish Amazon ECR Image
+description: Publish a container image to Amazon ECR
+
+inputs:
+  aws-region:
+    description: The AWS region to use
+    required: true
+  role-to-assume:
+    description: The IAM role to assume
+    required: true
+  role-chaining:
+    description: Whether to chain roles
+    required: false
+    default: "false"
+  ecr-repo-name:
+    description: The name of the ECR repository
+    required: true
+  image-default-tag:
+    description: The default tag to use for the image
+    required: false
+    default: latest
+  add-image-default-tag:
+    description: Whether to add the default tag to the image
+    required: false
+    default: "false"
+  use-short-hash:
+    description: Whether to use a short hash for the image tag
+    required: false
+    default: "false"
+  short-hash-length:
+    description: The length of the short hash
+    required: false
+    default: "7"
+  setup-docker-buildx:
+    description: Whether to set up Docker Buildx
+    required: false
+    default: "true"
+  context-dir:
+    description: The directory for Docker build context
+    required: false
+    default: ${{ github.workspace }}
+  dockerfile:
+    description: The path to the Dockerfile
+    required: false
+    default: ""
+
+outputs:
+  image:
+    description: The full image tag published to ECR
+    value: ${{ steps.image-names.outputs.image }}
+  images:
+    description: |
+      Comma-separated list of tags published to ECR,
+      including the full image tag and the default tag if included
+    value: ${{ steps.image-names.outputs.images }}
+
+runs:
+  using: composite
+
+  steps:
+    - name: Set up Docker Buildx
+      if: ${{ inputs.setup-docker-buildx == 'true' }}
+      uses: docker/setup-buildx-action@v3
+
+    - name: Configure AWS Credentials
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        role-chaining: ${{ inputs.role-chaining == 'true' }}
+
+    - name: Login to Amazon ECR
+      if: ${{ github.event_name != 'pull_request' }}
+      id: ecr-login
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set Dockerfile
+      id: set-dockerfile
+      shell: bash
+      env:
+        CONTEXT_DIR: ${{ inputs.context-dir }}
+        DOCKERFILE: ${{ inputs.dockerfile }}
+      run: |
+        if [ -z "${DOCKERFILE}" ]; then
+          DOCKERFILE="${CONTEXT_DIR}/Dockerfile"
+        fi
+        echo "dockerfile=${DOCKERFILE}" >> $GITHUB_OUTPUT
+
+    - name: Format image names
+      id: image-names
+      shell: bash
+      env:
+        EVENT: ${{ github.event_name }}
+        USE_SHORT_HASH: ${{ inputs.use-short-hash }}
+        SHORT_HASH_LENGTH: ${{ inputs.short-hash-length }}
+        IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
+        ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
+        CONTAINER_REPO_BASE_NAME: ${{ inputs.ecr-repo-name }}
+      run: |
+        if [ "${USE_SHORT_HASH}" = "true" ]; then
+          IMAGE_TAG="${GITHUB_SHA::${SHORT_HASH_LENGTH}}"
+        else
+          IMAGE_TAG="${GITHUB_SHA}"
+        fi
+        if [ "${EVENT}" = "pull_request" ]; then
+          CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
+        else
+          CONTAINER_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
+        fi
+        IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
+        if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
+          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "images=${IMAGE},${IMAGE_DEFAULT}" >> $GITHUB_OUTPUT
+        else
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "images=${IMAGE}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        platforms: linux/amd64,linux/arm64
+        context: ${{ inputs.context-dir }}
+        file: ${{ steps.set-dockerfile.outputs.dockerfile }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.image-names.outputs.images }}
+        provenance: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Tag arm64
+      uses: docker/build-push-action@v6
+      if: ${{ github.event_name != 'pull_request' }}
+      with:
+        platforms: linux/arm64
+        context: ${{ inputs.context-dir }}
+        file: ${{ steps.set-dockerfile.outputs.dockerfile }}
+        push: true
+        tags: "${{ steps.image-names.outputs.image }}-arm64"
+        provenance: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Tag x86_64
+      uses: docker/build-push-action@v6
+      if: ${{ github.event_name != 'pull_request' }}
+      with:
+        platforms: linux/amd64
+        context: ${{ inputs.context-dir }}
+        file: ${{ steps.set-dockerfile.outputs.dockerfile }}
+        push: true
+        tags: "${{ steps.image-names.outputs.image }}-x86_64"
+        provenance: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

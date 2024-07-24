@@ -37,8 +37,14 @@ on:
         default: 7
 
       context-dir:
-        required: true
+        required: false
         type: string
+        default: ${{ github.workspace }}
+
+      dockerfile:
+        required: false
+        type: string
+        default: ""
 
       matrix-step-name:
         required: false
@@ -64,13 +70,6 @@ on:
         description: |
           Directory where the configuration artifact will
           be saved.
-
-      arch-platforms:
-        required: false
-        type: string
-        default: linux/arm64
-        description: |
-          Comma-separated string to select image architectures.
 
       ## `image-artifact` is a workaround for the following bug:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
@@ -124,62 +123,20 @@ jobs:
         with:
           aws-region: ${{ inputs.aws-region }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Build and push image to ECR
+        id: build
+        uses: andreswebs/gh-actions/.github/actions/aws-ecr-publish-image@main
         with:
           aws-region: ${{ inputs.aws-region }}
           role-to-assume: ${{ inputs.role-to-assume }}
           role-chaining: ${{ inputs.role-chaining }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Amazon ECR
-        if: ${{ github.event_name != 'pull_request' }}
-        id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Format image names
-        id: image-names
-        env:
-          EVENT: ${{ github.event_name }}
-          USE_SHORT_HASH: ${{ inputs.use-short-hash }}
-          SHORT_HASH_LENGTH: ${{ inputs.short-hash-length }}
-          IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
-          ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
-          CONTAINER_REPO_BASE_NAME: ${{ inputs.ecr-repo-name }}
-        run: |
-          if [ "${USE_SHORT_HASH}" = "true" ]; then
-            IMAGE_TAG="${GITHUB_SHA::${SHORT_HASH_LENGTH}}"
-          else
-            IMAGE_TAG="${GITHUB_SHA}"
-          fi
-          if [ "${EVENT}" = "pull_request" ]; then
-            CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
-          else
-            CONTAINER_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
-            CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
-          fi
-          IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
-          if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
-            IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
-            echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-            echo "images=${IMAGE},${IMAGE_DEFAULT}" >> $GITHUB_OUTPUT
-          else
-            echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-            echo "images=${IMAGE}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ inputs.context-dir }}
-          platforms: ${{ inputs.arch-platforms }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.image-names.outputs.images }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
-          provenance: false
+          ecr-repo-name: ${{ inputs.ecr-repo-name }}
+          image-default-tag: ${{ inputs.image-default-tag }}
+          add-image-default-tag: ${{ inputs.add-image-default-tag }}
+          use-short-hash: ${{ inputs.use-short-hash }}
+          short-hash-length: ${{ inputs.short-hash-length }}
+          context-dir: ${{ inputs.context-dir }}
+          dockerfile: ${{ inputs.dockerfile }}
 
       ## Workaround for bug:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
@@ -189,7 +146,7 @@ jobs:
         uses: andreswebs/gh-actions/.github/actions/value-as-artifact@main
         with:
           key: ${{ inputs.image-artifact }}
-          value: ${{ steps.image-names.outputs.image }}
+          value: ${{ steps.build.outputs.image }}
 
       - name: Matrix Outputs
         id: matrix-out
@@ -199,4 +156,4 @@ jobs:
           matrix-step-name: ${{ inputs.matrix-step-name }}
           matrix-key: ${{ inputs.matrix-key }}
           outputs: |-
-            images: ${{ steps.image-names.outputs.image }}
+            images: ${{ steps.build.outputs.imagee }}

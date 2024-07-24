@@ -24,6 +24,14 @@ inputs:
     description: Whether to add the default tag to the image
     required: false
     default: "false"
+  image-tag-suffix:
+    description: Add a suffix to all image tags
+    required: false
+    default: ""
+  use-hash:
+    description: Whether to use the commit hash for the image tag; overriden by use-short-hash
+    required: false
+    default: "true"
   use-short-hash:
     description: Whether to use a short hash for the image tag
     required: false
@@ -93,16 +101,21 @@ runs:
       shell: bash
       env:
         EVENT: ${{ github.event_name }}
+        USE_HASH: ${{ inputs.use-hash }}
         USE_SHORT_HASH: ${{ inputs.use-short-hash }}
         SHORT_HASH_LENGTH: ${{ inputs.short-hash-length }}
         IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
         ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
         CONTAINER_REPO_BASE_NAME: ${{ inputs.ecr-repo-name }}
+        IMAGE_TAG_SUFFIX: ${{ inputs.image-tag-suffix }}
       run: |
         if [ "${USE_SHORT_HASH}" = "true" ]; then
           IMAGE_TAG="${GITHUB_SHA::${SHORT_HASH_LENGTH}}"
-        else
+        elif [ "${USE_HASH}" = "true" ]; then
           IMAGE_TAG="${GITHUB_SHA}"
+        fi
+        if [ -n "${IMAGE_TAG}" ]; then
+          IMAGE_TAG="${IMAGE_TAG}${IMAGE_TAG_SUFFIX}"
         fi
         if [ "${EVENT}" = "pull_request" ]; then
           CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
@@ -111,14 +124,16 @@ runs:
           CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
         fi
         IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
+        IMAGE="${IMAGE%:}"
+
         if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
-          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
-          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-          echo "images=${IMAGE},${IMAGE_DEFAULT}" >> $GITHUB_OUTPUT
+          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}${IMAGE_TAG_SUFFIX}"
+          images="${IMAGE},${IMAGE_DEFAULT}"
         else
-          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-          echo "images=${IMAGE}" >> $GITHUB_OUTPUT
+          images="${IMAGE}"
         fi
+        echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+        echo "images=${images}" >> $GITHUB_OUTPUT
 
     - name: Build and push
       uses: docker/build-push-action@v6

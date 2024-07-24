@@ -1,0 +1,29 @@
+---
+name: File Report
+
+description: |
+  Create comments on GitHub PRs to display the contents of a file for further approval.
+
+inputs:
+  source-txt-file:
+    description: Full path of the text file to use as source for the comment
+    required: true
+  environment:
+    description: Name of the environment
+    required: false
+    default: ""
+
+runs:
+  using: composite
+
+  steps:
+    - name: Comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      env:
+        ENV_NAME: ${{ inputs.environment }}
+        SOURCE_TXT: ${{ inputs.source-txt-file }}
+      with:
+        script: |
+          const script = require('${{ github.action_path }}/scripts/comment.js');
+          await script({github, context});

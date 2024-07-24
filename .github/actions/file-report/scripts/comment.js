@@ -7,7 +7,7 @@ const {
   SUMMARY_HEADER,
 } = process.env;
 
-const plan = fs.readFileSync(SOURCE_TXT, 'utf8');
+const text = fs.readFileSync(SOURCE_TXT, 'utf8');
 
 const commentHeader = COMMENT_HEADER ? COMMENT_HEADER : 'Environment Report';
 const summaryHeader = SUMMARY_HEADER ? SUMMARY_HEADER : 'Show Report';
@@ -24,7 +24,7 @@ function chunkSubstr(str, size) {
   return chunks;
 }
 
-const chunks = chunkSubstr(plan, maxBodyCharacters);
+const chunks = chunkSubstr(text, maxBodyCharacters);
 
 async function githubComment({ github, context }) {
 
@@ -32,7 +32,11 @@ async function githubComment({ github, context }) {
 
   let output = '';
 
+  console.log('TEST 1');
+
   if (chunks.length) {
+
+    console.log('TEST 2');
 
     output += `## ${commentHeader}${envComment}\n\n`;
 

@@ -169,4 +169,4 @@ jobs:
           matrix-step-name: ${{ inputs.matrix-step-name }}
           matrix-key: ${{ inputs.matrix-key }}
           outputs: |-
-            images: ${{ steps.build.outputs.imagee }}
+            images: ${{ steps.build.outputs.images }}

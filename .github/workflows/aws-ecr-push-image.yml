@@ -96,10 +96,10 @@ on:
     outputs:
       image-name:
         description: The image name relative to the ECR registry, in the format `<REPO_NAME>:<IMAGE_TAG>`
-        value: ${{ jobs.publish.outputs.image-name }}
+        value: ${{ jobs.push.outputs.image-name }}
       images:
         description: "Matrix output containing all published images"
-        value: ${{ jobs.publish.outputs.images }}
+        value: ${{ jobs.push.outputs.images }}
 
 jobs:
   push:

@@ -129,7 +129,7 @@ runs:
           EXISTING_TAG=$(
             aws ecr list-images \
               --repository-name "${CONTAINER_REPO_BASE_NAME}" \
-              --query "imageIds[?imageTag==${IMAGE_TAG}].imageTag" \
+              --query "imageIds[?imageTag=='${IMAGE_TAG}'].imageTag" \
               --output text | tr -d '\n'
           )
           [ -n "${EXISTING_TAG}" ] && unset IMAGE_TAG && unset EXISTING_TAG
@@ -140,7 +140,7 @@ runs:
           EXISTING_TAG=$(
             aws ecr list-images \
               --repository-name "${CONTAINER_REPO_BASE_NAME}" \
-              --query "imageIds[?imageTag==${IMAGE_DEFAULT_TAG}].imageTag" \
+              --query "imageIds[?imageTag=='${IMAGE_DEFAULT_TAG}'].imageTag" \
               --output text | tr -d '\n'
           )
           [ -n "${EXISTING_TAG}" ] && unset IMAGE_DEFAULT_TAG && unset EXISTING_TAG

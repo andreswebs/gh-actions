@@ -136,7 +136,7 @@ jobs:
 
       - name: Build and push image to ECR
         id: build
-        uses: andreswebs/gh-actions/.github/actions/aws-ecr-push-image@main
+        uses: andreswebs/gh-actions/.github/actions/aws-ecr-push-image@dev
         with:
           aws-region: ${{ inputs.aws-region }}
           role-to-assume: ${{ inputs.role-to-assume }}

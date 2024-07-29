@@ -123,25 +123,56 @@ runs:
         elif [ "${USE_HASH}" = "true" ]; then
           IMAGE_TAG="${GITHUB_SHA}"
         fi
+
         if [ -n "${IMAGE_TAG}" ]; then
           IMAGE_TAG="${IMAGE_TAG}${IMAGE_TAG_SUFFIX}"
+          EXISTING_TAG=$(
+            aws ecr list-images \
+              --repository-name "${CONTAINER_REPO_BASE_NAME}" \
+              --query "imageIds[?imageTag==${IMAGE_TAG}].imageTag" \
+              --output text | tr -d '\n'
+          )
+          [ -n "${EXISTING_TAG}" ] && unset IMAGE_TAG && unset EXISTING_TAG
         fi
+
+        if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
+          IMAGE_DEFAULT_TAG="${IMAGE_DEFAULT_TAG}${IMAGE_TAG_SUFFIX}"
+          EXISTING_TAG=$(
+            aws ecr list-images \
+              --repository-name "${CONTAINER_REPO_BASE_NAME}" \
+              --query "imageIds[?imageTag==${IMAGE_DEFAULT_TAG}].imageTag" \
+              --output text | tr -d '\n'
+          )
+          [ -n "${EXISTING_TAG}" ] && unset IMAGE_DEFAULT_TAG && unset EXISTING_TAG
+        fi
+
         if [ "${EVENT}" = "pull_request" ]; then
           CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
         else
           CONTAINER_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
           CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
         fi
-        IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
-        IMAGE="${IMAGE%:}"
 
-        if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
-          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}${IMAGE_TAG_SUFFIX}"
-          images="${IMAGE},${IMAGE_DEFAULT}"
-        else
-          images="${IMAGE}"
+        if [ -n "${IMAGE_TAG}" ]; then
+          IMAGE="${CONTAINER_REPO_NAME}:${IMAGE_TAG}"
         fi
-        echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+
+        if [ -n "${IMAGE_DEFAULT_TAG}" ]; then
+          IMAGE_DEFAULT="${CONTAINER_REPO_NAME}:${IMAGE_DEFAULT_TAG}"
+        fi
+
+        if [ -n "${IMAGE}" ] && [ -n "${IMAGE_DEFAULT}" ]; then
+          image="${IMAGE}"
+          images="${IMAGE},${IMAGE_DEFAULT}"
+        elif [ -n "${IMAGE_DEFAULT}" ]; then
+          image="${IMAGE_DEFAULT}"
+          images="${IMAGE_DEFAULT}"
+        else
+          >&2 echo "No image tag available"
+          exit 1
+        fi
+
+        echo "image=${image}" >> $GITHUB_OUTPUT
         echo "images=${images}" >> $GITHUB_OUTPUT
 
     - name: Build and push

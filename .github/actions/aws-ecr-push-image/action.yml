@@ -164,11 +164,14 @@ runs:
         if [ -n "${IMAGE}" ] && [ -n "${IMAGE_DEFAULT}" ]; then
           image="${IMAGE}"
           images="${IMAGE},${IMAGE_DEFAULT}"
+        elif [ -n "${IMAGE}" ]; then
+          image="${IMAGE}"
+          images="${IMAGE}"
         elif [ -n "${IMAGE_DEFAULT}" ]; then
           image="${IMAGE_DEFAULT}"
           images="${IMAGE_DEFAULT}"
         else
-          >&2 echo "No image tag available"
+          >&2 echo "No valid image tag selected."
           exit 1
         fi
 

@@ -1,0 +1,20 @@
+---
+name: Install difftastic
+
+description: |
+  Installs difftastic using Nix
+
+runs:
+  using: composite
+
+  steps:
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v13
+
+    - name: Enable Nix cache
+      uses: DeterminateSystems/magic-nix-cache-action@v7
+
+    - name: Install difftastic
+      shell: bash
+      run: |
+        nix-env --install difftastic --file '<nixpkgs>'

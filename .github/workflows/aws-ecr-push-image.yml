@@ -19,6 +19,11 @@ on:
       ecr-repo-name:
         required: true
         type: string
+      ecr-registry-type:
+        description: The type of ECR registry, private or public
+        type: string
+        required: false
+        default: private
       image-default-tag:
         required: false
         type: string
@@ -142,6 +147,7 @@ jobs:
           role-to-assume: ${{ inputs.role-to-assume }}
           role-chaining: ${{ inputs.role-chaining }}
           ecr-repo-name: ${{ inputs.ecr-repo-name }}
+          ecr-registry-type: ${{ inputs.ecr-registry-type }}
           image-default-tag: ${{ inputs.image-default-tag }}
           add-image-default-tag: ${{ inputs.add-image-default-tag }}
           use-hash: ${{ inputs.use-hash }}

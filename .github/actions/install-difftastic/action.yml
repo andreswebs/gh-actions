@@ -1,20 +1,21 @@
 ---
 name: Install difftastic
 
-description: |
-  Installs difftastic using Nix
+description: Installs difftastic
 
 runs:
   using: composite
 
   steps:
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@v13
-
-    - name: Enable Nix cache
-      uses: DeterminateSystems/magic-nix-cache-action@v7
+    - name: Set up script
+      shell: bash
+      run: |
+        SCRIPTS_PATH="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPTS_PATH}/install-difftastic.sh"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+        echo "${HOME}/.local/bin" >> GITHUB_PATH
 
     - name: Install difftastic
       shell: bash
       run: |
-        nix-env --install difftastic --file '<nixpkgs>'
+        install-difftastic.sh

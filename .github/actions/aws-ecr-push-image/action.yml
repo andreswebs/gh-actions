@@ -28,6 +28,10 @@ inputs:
     description: Whether to add the default tag to the image
     required: false
     default: "false"
+  mutate-image-default-tag:
+    description: Whether to mutate the default tag on the image
+    required: false
+    default: "false"
   image-tag-suffix:
     description: Add a suffix to all image tags
     required: false
@@ -121,7 +125,10 @@ runs:
         SHORT_HASH_LENGTH: ${{ inputs.short-hash-length }}
         IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
         ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
+        MUTATE_IMAGE_DEFAULT_TAG: ${{ inputs.mutate-image-default-tag }}
+        CONTAINER_REGISTRY: ${{ github.event_name != 'pull_request' && steps.ecr-login.outputs.registry || '' }}
         CONTAINER_REPO_BASE_NAME: ${{ inputs.ecr-repo-name }}
+        REGISTRY_TYPE: ${{ inputs.ecr-registry-type }}
         IMAGE_TAG_SUFFIX: ${{ inputs.image-tag-suffix }}
       run: |
         if [ "${USE_SHORT_HASH}" = "true" ]; then
@@ -132,30 +139,33 @@ runs:
 
         if [ -n "${IMAGE_TAG}" ]; then
           IMAGE_TAG="${IMAGE_TAG}${IMAGE_TAG_SUFFIX}"
-          EXISTING_TAG=$(
-            aws ecr list-images \
-              --repository-name "${CONTAINER_REPO_BASE_NAME}" \
-              --query "imageIds[?imageTag=='${IMAGE_TAG}'].imageTag" \
-              --output text | tr -d '\n'
-          )
+          if [ "${REGISTRY_TYPE}" = "private" ]; then
+            EXISTING_TAG=$(
+              aws ecr list-images \
+                --repository-name "${CONTAINER_REPO_BASE_NAME}" \
+                --query "imageIds[?imageTag=='${IMAGE_TAG}'].imageTag" \
+                --output text | tr -d '\n'
+            )
+          fi
           [ -n "${EXISTING_TAG}" ] && unset IMAGE_TAG && unset EXISTING_TAG
         fi
 
         if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
           IMAGE_DEFAULT_TAG="${IMAGE_DEFAULT_TAG}${IMAGE_TAG_SUFFIX}"
-          EXISTING_TAG=$(
-            aws ecr list-images \
-              --repository-name "${CONTAINER_REPO_BASE_NAME}" \
-              --query "imageIds[?imageTag=='${IMAGE_DEFAULT_TAG}'].imageTag" \
-              --output text | tr -d '\n'
-          )
+          if [ "${REGISTRY_TYPE}" = "private" ] && [ "${MUTATE_IMAGE_DEFAULT_TAG}" = "false" ]; then
+            EXISTING_TAG=$(
+              aws ecr list-images \
+                --repository-name "${CONTAINER_REPO_BASE_NAME}" \
+                --query "imageIds[?imageTag=='${IMAGE_DEFAULT_TAG}'].imageTag" \
+                --output text | tr -d '\n'
+            )
+          fi
           [ -n "${EXISTING_TAG}" ] && unset IMAGE_DEFAULT_TAG && unset EXISTING_TAG
         fi
 
         if [ "${EVENT}" = "pull_request" ]; then
           CONTAINER_REPO_NAME="${CONTAINER_REPO_BASE_NAME}"
         else
-          CONTAINER_REGISTRY="${{ steps.ecr-login.outputs.registry }}"
           CONTAINER_REPO_NAME="${CONTAINER_REGISTRY}/${CONTAINER_REPO_BASE_NAME}"
         fi
 

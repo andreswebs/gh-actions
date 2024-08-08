@@ -32,6 +32,16 @@ on:
         required: false
         type: boolean
         default: false
+      mutate-image-default-tag:
+        description: Whether to mutate the default tag on the image
+        type: boolean
+        required: false
+        default: false
+      image-tag-suffix:
+        description: Add a suffix to all image tags
+        type: string
+        required: false
+        default: ""
       use-hash:
         required: false
         type: boolean
@@ -149,7 +159,9 @@ jobs:
           ecr-repo-name: ${{ inputs.ecr-repo-name }}
           ecr-registry-type: ${{ inputs.ecr-registry-type }}
           image-default-tag: ${{ inputs.image-default-tag }}
+          image-tag-suffix: ${{ inputs.image-tag-suffix }}
           add-image-default-tag: ${{ inputs.add-image-default-tag }}
+          mutate-image-default-tag: ${{ inputs.mutate-image-default-tag }}
           use-hash: ${{ inputs.use-hash }}
           use-short-hash: ${{ inputs.use-short-hash }}
           short-hash-length: ${{ inputs.short-hash-length }}

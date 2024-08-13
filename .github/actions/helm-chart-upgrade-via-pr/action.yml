@@ -62,6 +62,7 @@ runs:
       env:
         CHART_NAME: ${{ inputs.chart-name }}
         BRANCH_NAME_PREFIX: ${{ inputs.branch-name-prefix }}
+        TOKEN: ${{ inputs.token }}
 
         ## TODO:
         ## Track this value found on the internet for the github-actions[bot] email:
@@ -85,7 +86,7 @@ runs:
         git add .
         git commit -m "${MSG}"
 
-        echo "${K8S_CONFIG_TOKEN}" > token
+        echo "${TOKEN}" > token
         gh auth login --with-token < token
         rm token
 

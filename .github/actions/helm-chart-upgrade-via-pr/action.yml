@@ -13,7 +13,7 @@ inputs:
     description: Name of the Helm chart
     required: true
   token:
-    description: GitHub token with write access to the Kubernetes configuration repository
+    description: GitHub token with write access to the Helm chart repository
     required: true
   repository:
     description: Repository name

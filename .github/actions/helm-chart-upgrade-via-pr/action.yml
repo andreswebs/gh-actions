@@ -35,7 +35,7 @@ inputs:
       Whether to authenticate with GitHub CLI
       using the input token
     required: false
-    default: "true"
+    default: "false"
 
   branch-name-prefix:
     description: |

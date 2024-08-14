@@ -42,7 +42,7 @@ inputs:
     description: |
       A suffix to append to the branch name;
       overrides the default:
-       `-${APP_VERSION}`
+       `-${CHART_VERSION}-${APP_VERSION}`
     required: false
     default: ""
 
@@ -72,26 +72,27 @@ runs:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
 
-    - name: Update version
+    - name: Version
       shell: bash
       working-directory: ${{ inputs.chart-dir }}
       env:
         APP_VERSION: ${{ inputs.app-version }}
         CHART_VERSION: ${{ inputs.chart-version }}
       run: |
-        set -o xtrace
-        yq --version
-
-        [ -n "${APP_VERSION}" ] && {
-          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+        if [ -n "${APP_VERSION}" ]; then
           yq -i ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
           yq -i ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
-        }
+        else
+          APP_VERSION=$(yq ".appVersion" < "Chart.yaml")
+        fi
+        echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
 
-        [ -n "${CHART_VERSION}" ] && {
-          echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+        if [ -n "${CHART_VERSION}" ]; then
           yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
-        }
+        else
+          CHART_VERSION=$(yq ".version" < "Chart.yaml")
+        fi
+        echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
 
     - name: Create PR
       shell: bash

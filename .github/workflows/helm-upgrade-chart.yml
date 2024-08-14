@@ -23,14 +23,6 @@ on:
         required: true
         type: string
 
-      gh-app-client-id:
-        required: true
-        type: string
-
-      gh-app-prv-key:
-        required: true
-        type: string
-
     secrets:
       gh-app-client-id:
         required: true

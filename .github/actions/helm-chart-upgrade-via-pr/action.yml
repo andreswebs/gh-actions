@@ -30,12 +30,6 @@ inputs:
     description: Branch name
     required: false
     default: main
-  gh-auth-login:
-    description: |
-      Whether to authenticate with GitHub CLI
-      using the input token
-    required: false
-    default: "false"
 
   branch-name-prefix:
     description: |
@@ -55,7 +49,21 @@ inputs:
 runs:
   using: composite
   steps:
-    ## TODO: check gh
+    - name: Check Dependencies
+      shell: bash
+      run: |
+        err_log() {
+          >&2 echo "${1}"
+        }
+        check_cmd() {
+          if ! command -v "${1}" &> /dev/null; then
+            err_log "error: ${1} command is missing"
+            exit 1
+          fi
+        }
+        check_cmd git
+        check_cmd yq
+        check_cmd gh
 
     - name: Checkout
       uses: actions/checkout@v4
@@ -72,6 +80,7 @@ runs:
         CHART_VERSION: ${{ inputs.chart-version }}
       run: |
         set -o xtrace
+        yq --version
 
         [ -n "${APP_VERSION}" ] && {
           echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
@@ -79,16 +88,10 @@ runs:
           yq -i ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
         }
 
-    # [ -n "${CHART_VERSION}" ] && {
-    #   echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
-    #   yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
-    # }
-
-    # [ "${GH_AUTH_LOGIN}" = "true" ] && [ -n "${TOKEN}" ] && {
-    #   echo "${TOKEN}" > token
-    #   gh auth login --with-token < token
-    #   rm -f token
-    # }
+        [ -n "${CHART_VERSION}" ] && {
+          echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+          yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
+        }
 
     - name: Create PR
       shell: bash
@@ -96,9 +99,7 @@ runs:
         CHART_NAME: ${{ inputs.chart-name }}
         BRANCH_NAME_PREFIX: ${{ inputs.branch-name-prefix }}
         BRANCH_NAME_SUFFIX: ${{ inputs.branch-name-suffix }}
-        TOKEN: ${{ inputs.token }}
         BASE: ${{ inputs.ref }}
-        # GH_AUTH_LOGIN: ${{ inputs.gh-auth-login }}
         GH_TOKEN: ${{ inputs.token }}
 
         ## github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
@@ -109,8 +110,6 @@ runs:
         GH_ACTIONS_BOT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
       run: |
-        set -o xtrace
-
         [ -z "${BRANCH_NAME_SUFFIX}" ] && {
           [ -n "${CHART_VERSION}" ] && BRANCH_NAME_SUFFIX="-${CHART_VERSION}"
           [ -n "${APP_VERSION}" ] && BRANCH_NAME_SUFFIX="${BRANCH_NAME_SUFFIX}-${APP_VERSION}"

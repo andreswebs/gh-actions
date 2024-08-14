@@ -26,6 +26,13 @@ err_log() {
   >&2 echo "${1}"
 }
 
+check_cmd() {
+  if ! command -v "${1}" &> /dev/null; then
+    err_log "error: ${1} must be present to run this script"
+    exit 1
+  fi
+}
+
 iss="${GITHUB_APP_CLIENT_ID}"
 
 [ -z "${iss}" ] && {
@@ -43,26 +50,9 @@ iss="${GITHUB_APP_CLIENT_ID}"
   exit 1
 }
 
-if ! command -v openssl &> /dev/null; then
-  err_log "error: openssl must be present to run this script"
-  exit 1
-fi
-
-if ! command -v curl &> /dev/null; then
-  err_log "error: curl must be present to run this script"
-  exit 1
-fi
-
-if ! command -v jq &> /dev/null; then
-  err_log "error: jq must be present to run this script"
-  exit 1
-fi
-
-if ! command -v gh &> /dev/null; then
-  err_log "error: gh must be present to run this script"
-  err_log "install from https://cli.github.com/"
-  exit 1
-fi
+check_cmd openssl
+check_cmd curl
+check_cmd jq
 
 secret=$(cat "${GITHUB_APP_PRV_KEY_PATH}")
 
@@ -130,4 +120,3 @@ GITHUB_TOKEN=$(
 )
 
 echo "${GITHUB_TOKEN}"
-

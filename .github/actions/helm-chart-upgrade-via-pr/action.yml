@@ -73,13 +73,13 @@ runs:
       run: |
         [ -n "${APP_VERSION}" ] && {
           echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
-          yq --in-place ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
-          yq --in-place ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
+          yq -i ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
+          yq -i ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
         }
 
         [ -n "${CHART_VERSION}" ] && {
           echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
-          yq --in-place ".version = \"${CHART_VERSION}\"" "Chart.yaml"
+          yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
         }
 
     - name: Create PR

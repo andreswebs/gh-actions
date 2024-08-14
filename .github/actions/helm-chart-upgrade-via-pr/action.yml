@@ -71,6 +71,8 @@ runs:
         APP_VERSION: ${{ inputs.app-version }}
         CHART_VERSION: ${{ inputs.chart-version }}
       run: |
+        set -o xtrace
+
         [ -n "${APP_VERSION}" ] && {
           echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
           yq -i ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"

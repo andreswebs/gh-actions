@@ -1,0 +1,72 @@
+---
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        required: true
+        type: string
+
+      image-artifact:
+        required: true
+        type: string
+
+      git-repo:
+        required: true
+        type: string
+
+      chart-dir:
+        required: false
+        type: string
+        default: .
+
+      chart-name:
+        required: true
+        type: string
+
+      gh-app-client-id:
+        required: true
+        type: string
+
+      gh-app-prv-key:
+        required: true
+        type: string
+
+jobs:
+  upgrade-chart:
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Get image value
+        id: image
+        uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
+        with:
+          key: ${{ inputs.image-artifact }}
+
+      - name: Get app version
+        id: app
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.value }}
+        run: |
+          APP_VERSION=$(cut -d ':' -f 2 <(echo ${IMAGE}))
+          echo "version=${APP_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Authenticate Git
+        id: auth
+        uses: andreswebs/gh-actions/.github/actions/gh-app-auth@main
+        with:
+          client-id: ${{ secrets.GH_APP_CLIENT_ID }}
+          prv-key: ${{ secrets.GH_APP_PRV_KEY }}
+
+      - name: Upgrade Chart
+        uses: andreswebs/gh-actions/.github/actions/helm-chart-upgrade-via-pr@main
+        with:
+          token: ${{ steps.auth.outputs.token }}
+          repository: ${{ inputs.git-repo }}
+          chart-dir: ${{ inputs.chart-dir }}
+          chart-name: ${{ inputs.chart-name }}
+          app-version: ${{ steps.app.outputs.version }}

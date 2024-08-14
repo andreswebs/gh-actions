@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -15,14 +14,13 @@ on:
       role-to-assume:
         required: false
         type: string
-        default: null
+        default: ""
       tfvars:
         required: false
         type: string
         default: images.auto.tfvars
 
 jobs:
-
   images-list:
     name: Build images list
     runs-on: ${{ inputs.runs-on }}
@@ -35,7 +33,6 @@ jobs:
       images: ${{ steps.images-list.outputs.list }}
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -66,7 +63,6 @@ jobs:
         shell: bash
 
     steps:
-
       - name: Add env tag
         id: env-tag
         uses: andreswebs/gh-actions/.github/actions/ecr-add-env-tag@main

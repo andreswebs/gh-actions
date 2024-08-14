@@ -31,6 +31,12 @@ on:
         required: true
         type: string
 
+    secrets:
+      gh-app-client-id:
+        required: true
+      gh-app-prv-key:
+        required: true
+
 jobs:
   upgrade-chart:
     runs-on: ${{ inputs.runs-on }}
@@ -59,8 +65,8 @@ jobs:
         id: auth
         uses: andreswebs/gh-actions/.github/actions/gh-app-auth@main
         with:
-          client-id: ${{ secrets.GH_APP_CLIENT_ID }}
-          prv-key: ${{ secrets.GH_APP_PRV_KEY }}
+          client-id: ${{ secrets.gh-app-client-id }}
+          prv-key: ${{ secrets.gh-app-prv-key }}
 
       - name: Upgrade Chart
         uses: andreswebs/gh-actions/.github/actions/helm-chart-upgrade-via-pr@main

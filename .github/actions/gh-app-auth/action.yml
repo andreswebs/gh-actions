@@ -75,6 +75,6 @@ runs:
       if: ${{ inputs.setup-git == 'true' }}
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
+        GH_TOKEN: ${{ steps.auth.outputs.token }}
       run: |
         gh auth setup-git

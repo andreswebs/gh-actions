@@ -84,6 +84,12 @@ runs:
     #   yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
     # }
 
+    # [ "${GH_AUTH_LOGIN}" = "true" ] && [ -n "${TOKEN}" ] && {
+    #   echo "${TOKEN}" > token
+    #   gh auth login --with-token < token
+    #   rm -f token
+    # }
+
     - name: Create PR
       shell: bash
       env:
@@ -119,12 +125,6 @@ runs:
 
         git add .
         git commit -m "${TITLE}"
-
-        [ "${GH_AUTH_LOGIN}" = "true" ] && [ -n "${TOKEN}" ] && {
-          echo "${TOKEN}" > token
-          gh auth login --with-token < token
-          rm -f token
-        }
 
         git push origin "${BRANCH_NAME}"
 

@@ -22,8 +22,7 @@ inputs:
     default: ""
   token:
     description: GitHub token with write access to the Helm chart repository
-    required: false
-    default: ""
+    required: true
   repository:
     description: Repository name
     required: true
@@ -31,10 +30,12 @@ inputs:
     description: Branch name
     required: false
     default: main
-
-  # image-artifact:
-  #   description: Name of the image artifact
-  #   required: true
+  gh-auth-login:
+    description: |
+      Whether to authenticate with GitHub CLI
+      using the input token
+    required: false
+    default: "true"
 
   branch-name-prefix:
     description: |
@@ -47,7 +48,7 @@ inputs:
     description: |
       A suffix to append to the branch name;
       overrides the default:
-       `-${CHART_VERSION}-${APP_VERSION}`
+       `-${APP_VERSION}`
     required: false
     default: ""
 
@@ -63,27 +64,23 @@ runs:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
 
-    # - name: Get image value
-    #   id: image
-    #   uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
-    #   with:
-    #     key: ${{ inputs.image-artifact }}
-
-    ## TODO:
-    # APP_VERSION=$(cut -d ':' -f 2 <(echo ${IMAGE}))
-
     - name: Update version
       shell: bash
       working-directory: ${{ inputs.chart-dir }}
       env:
-        IMAGE: ${{ steps.image.outputs.value }}
         APP_VERSION: ${{ inputs.app-version }}
         CHART_VERSION: ${{ inputs.chart-version }}
       run: |
+        [ -n "${APP_VERSION}" ] && {
+          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+          yq --in-place ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
+          yq --in-place ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
+        }
 
-        echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
-        yq --in-place ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
-        yq --in-place ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
+        [ -n "${CHART_VERSION}" ] && {
+          echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+          yq --in-place ".version = \"${CHART_VERSION}\"" "Chart.yaml"
+        }
 
     - name: Create PR
       shell: bash
@@ -93,6 +90,7 @@ runs:
         BRANCH_NAME_SUFFIX: ${{ inputs.branch-name-suffix }}
         TOKEN: ${{ inputs.token }}
         BASE: ${{ inputs.ref }}
+        GH_AUTH_LOGIN: ${{ inputs.gh-auth-login }}
 
         ## github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         ## Sources:
@@ -103,11 +101,12 @@ runs:
 
       run: |
         [ -z "${BRANCH_NAME_SUFFIX}" ] && {
-          BRANCH_NAME_SUFFIX="-${CHART_VERSION}-${APP_VERSION}"
+          [ -n "${CHART_VERSION}" ] && BRANCH_NAME_SUFFIX="-${CHART_VERSION}"
+          [ -n "${APP_VERSION}" ] && BRANCH_NAME_SUFFIX="${BRANCH_NAME_SUFFIX}-${APP_VERSION}"
         }
 
         BRANCH_NAME=${BRANCH_NAME_PREFIX}${CHART_NAME}${BRANCH_NAME_SUFFIX}
-        TITLE="chore: update ${CHART_NAME} (version: ${CHART_VERSION}; appVersion: ${APP_VERSION})"
+        TITLE="chore: update ${CHART_NAME} ${CHART_VERSION} ${APP_VERSION})"
 
         git config user.name "${GH_ACTIONS_BOT_NAME}"
         git config user.email "${GH_ACTIONS_BOT_EMAIL}"
@@ -115,12 +114,12 @@ runs:
         git checkout -b "${BRANCH_NAME}"
 
         git add .
-        git commit -m "${MSG}"
+        git commit -m "${TITLE}"
 
-        [ -n "${TOKEN}" ] && {
+        [ "${GH_AUTH_LOGIN}" = "true" ] && [ -n "${TOKEN}" ] && {
           echo "${TOKEN}" > token
           gh auth login --with-token < token
-          rm token
+          rm -f token
         }
 
         git push origin "${BRANCH_NAME}"

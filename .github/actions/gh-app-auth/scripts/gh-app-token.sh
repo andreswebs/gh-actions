@@ -119,7 +119,7 @@ APP_TOKEN_URL=$(
     jq --raw-output '.[0].access_tokens_url' # single installation
 )
 
-export GITHUB_TOKEN=$(
+GITHUB_TOKEN=$(
     curl \
         --request POST \
         --silent \
@@ -129,5 +129,5 @@ export GITHUB_TOKEN=$(
     jq --raw-output '.token'
 )
 
-# side effect: set up git to pull / push with the generated token
-gh auth setup-git
+echo "${GITHUB_TOKEN}"
+

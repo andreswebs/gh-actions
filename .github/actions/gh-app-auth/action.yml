@@ -24,6 +24,17 @@ inputs:
     description: GitHub App Private Key Path
     required: false
     default: ./key.pem
+  setup-git:
+    description: |
+      Whether to set up git to pull and
+      push with the generated token
+    required: false
+    default: "true"
+
+outputs:
+  token:
+    value: ${{ steps.auth.outputs.token }}
+    description: GitHub App token
 
 runs:
   using: composite
@@ -34,7 +45,7 @@ runs:
       env:
         SCRIPTS_PATH: ${{ github.action_path }}/scripts
       run: |
-        chmod +x "${SCRIPTS_PATH}/gh-app-auth.sh"
+        chmod +x "${SCRIPTS_PATH}/gh-app-token.sh"
         echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
 
     - name: Credentials
@@ -52,7 +63,18 @@ runs:
         echo "GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}" >> $GITHUB_ENV
 
     - name: Authenticate
+      id: auth
       shell: bash
       run: |
-        gh-app-auth.sh
+        GITHUB_TOKEN=$(gh-app-token.sh)
+        echo "::add-mask::${GITHUB_TOKEN}"
+        echo "token=${GITHUB_TOKEN}" >> $GITHUB_OUTPUT
         rm -f "${GITHUB_APP_PRV_KEY_PATH}"
+
+    - name: Set up git
+      if: ${{ inputs.setup-git == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
+      run: |
+        gh auth setup-git

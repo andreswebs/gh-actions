@@ -117,7 +117,7 @@ runs:
         }
 
         BRANCH_NAME=${BRANCH_NAME_PREFIX}${CHART_NAME}${BRANCH_NAME_SUFFIX}
-        TITLE="chore: update ${CHART_NAME} ${CHART_VERSION} ${APP_VERSION})"
+        TITLE="chore: update ${CHART_NAME} ${CHART_VERSION} ${APP_VERSION}"
 
         git config user.name "${GH_ACTIONS_BOT_NAME}"
         git config user.email "${GH_ACTIONS_BOT_EMAIL}"

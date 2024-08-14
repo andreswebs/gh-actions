@@ -98,7 +98,8 @@ runs:
         BRANCH_NAME_SUFFIX: ${{ inputs.branch-name-suffix }}
         TOKEN: ${{ inputs.token }}
         BASE: ${{ inputs.ref }}
-        GH_AUTH_LOGIN: ${{ inputs.gh-auth-login }}
+        # GH_AUTH_LOGIN: ${{ inputs.gh-auth-login }}
+        GH_TOKEN: ${{ inputs.token }}
 
         ## github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         ## Sources:

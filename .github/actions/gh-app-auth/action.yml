@@ -1,0 +1,58 @@
+---
+name: gh CLI App Auth
+
+description: |
+  Authenticates the gh CLI using GitHub App credentials.
+  This action only works for private GitHub Apps with a
+  single installation.
+
+inputs:
+  app-id:
+    description: |
+      GitHub App ID; prefer to use
+      the GitHub App Client ID
+    required: false
+    default: ""
+  client-id:
+    description: GitHub App Client ID
+    required: false
+    default: ""
+  prv-key:
+    description: GitHub App Private Key
+    required: true
+  prv-key-path:
+    description: GitHub App Private Key Path
+    required: false
+    default: ./key.pem
+
+runs:
+  using: composite
+
+  steps:
+    - name: Script
+      shell: bash
+      env:
+        SCRIPTS_PATH: ${{ github.action_path }}/scripts
+      run: |
+        chmod +x "${SCRIPTS_PATH}/gh-app-auth.sh"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
+    - name: Credentials
+      shell: bash
+      env:
+        GITHUB_APP_ID: ${{ inputs.app-id }}
+        GITHUB_APP_CLIENT_ID: ${{ inputs.client-id }}
+        GITHUB_APP_PRV_KEY: ${{ inputs.prv-key }}
+        GITHUB_APP_PRV_KEY_PATH: ${{ inputs.prv-key-path }}
+      run: |
+        echo "::add-mask::${GITHUB_APP_PRV_KEY}"
+        echo "${GITHUB_APP_PRV_KEY}" > "${GITHUB_APP_PRV_KEY_PATH}"
+        echo "GITHUB_APP_PRV_KEY_PATH=${GITHUB_APP_PRV_KEY_PATH}" >> $GITHUB_ENV
+        echo "GITHUB_APP_ID=${GITHUB_APP_ID}" >> $GITHUB_ENV
+        echo "GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}" >> $GITHUB_ENV
+
+    - name: Authenticate
+      shell: bash
+      run: |
+        gh-app-auth.sh
+        rm -f "${GITHUB_APP_PRV_KEY_PATH}"

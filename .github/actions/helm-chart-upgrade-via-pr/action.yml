@@ -12,9 +12,18 @@ inputs:
   chart-name:
     description: Name of the Helm chart
     required: true
+  chart-version:
+    description: Chart version to set (.version in Chart.yaml)
+    required: false
+    default: ""
+  app-version:
+    description: Application version to set (.appVersion in Chart.yaml)
+    required: false
+    default: ""
   token:
     description: GitHub token with write access to the Helm chart repository
-    required: true
+    required: false
+    default: ""
   repository:
     description: Repository name
     required: true
@@ -22,17 +31,31 @@ inputs:
     description: Branch name
     required: false
     default: main
-  image-artifact:
-    description: Name of the image artifact
-    required: true
+
+  # image-artifact:
+  #   description: Name of the image artifact
+  #   required: true
+
   branch-name-prefix:
-    description: A prefix to prepend to the branch name
+    description: |
+      A prefix to prepend to the branch name;
+      overrides the default: `auto-`
     required: false
     default: auto-
+
+  branch-name-suffix:
+    description: |
+      A suffix to append to the branch name;
+      overrides the default:
+       `-${CHART_VERSION}-${APP_VERSION}`
+    required: false
+    default: ""
 
 runs:
   using: composite
   steps:
+    ## TODO: check gh
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -40,33 +63,37 @@ runs:
         repository: ${{ inputs.repository }}
         ref: ${{ inputs.ref }}
 
-    - name: Get image value
-      id: image
-      uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
-      with:
-        key: ${{ inputs.image-artifact }}
+    # - name: Get image value
+    #   id: image
+    #   uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
+    #   with:
+    #     key: ${{ inputs.image-artifact }}
+
+    ## TODO:
+    # APP_VERSION=$(cut -d ':' -f 2 <(echo ${IMAGE}))
 
     - name: Update version
       shell: bash
+      working-directory: ${{ inputs.chart-dir }}
       env:
         IMAGE: ${{ steps.image.outputs.value }}
-      working-directory: ${{ inputs.chart-dir }}
+        APP_VERSION: ${{ inputs.app-version }}
+        CHART_VERSION: ${{ inputs.chart-version }}
       run: |
-        APP_VERSION=$(cut -d ':' -f 2 <(echo ${IMAGE}))
+
         echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
-        yq -i ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
-        yq -i ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
+        yq --in-place ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
+        yq --in-place ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
 
     - name: Create PR
       shell: bash
       env:
         CHART_NAME: ${{ inputs.chart-name }}
         BRANCH_NAME_PREFIX: ${{ inputs.branch-name-prefix }}
+        BRANCH_NAME_SUFFIX: ${{ inputs.branch-name-suffix }}
         TOKEN: ${{ inputs.token }}
+        BASE: ${{ inputs.ref }}
 
-        ## TODO:
-        ## Track this value found on the internet for the github-actions[bot] email:
-        ## is this the correct value to use?
         ## github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         ## Sources:
         ## https://github.com/orgs/community/discussions/119597
@@ -75,8 +102,12 @@ runs:
         GH_ACTIONS_BOT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
       run: |
-        BRANCH_NAME=${BRANCH_NAME_PREFIX}${CHART_NAME}-${APP_VERSION}
-        MSG="chore: update ${CHART_NAME} to ${APP_VERSION}"
+        [ -z "${BRANCH_NAME_SUFFIX}" ] && {
+          BRANCH_NAME_SUFFIX="-${CHART_VERSION}-${APP_VERSION}"
+        }
+
+        BRANCH_NAME=${BRANCH_NAME_PREFIX}${CHART_NAME}${BRANCH_NAME_SUFFIX}
+        TITLE="chore: update ${CHART_NAME} (version: ${CHART_VERSION}; appVersion: ${APP_VERSION})"
 
         git config user.name "${GH_ACTIONS_BOT_NAME}"
         git config user.email "${GH_ACTIONS_BOT_EMAIL}"
@@ -86,14 +117,16 @@ runs:
         git add .
         git commit -m "${MSG}"
 
-        echo "${TOKEN}" > token
-        gh auth login --with-token < token
-        rm token
+        [ -n "${TOKEN}" ] && {
+          echo "${TOKEN}" > token
+          gh auth login --with-token < token
+          rm token
+        }
 
         git push origin "${BRANCH_NAME}"
 
         gh pr create \
           --body "" \
-          --title "${MSG}" \
+          --title "${TITLE}" \
           --head "${BRANCH_NAME}" \
-          --base "main"
+          --base "${BASE}"

@@ -17,8 +17,8 @@ inputs:
     description: GitHub App Client ID
     required: false
     default: ""
-  prv-key:
-    description: GitHub App Private Key
+  prv-key-base64:
+    description: GitHub App Private Key encoded in base64
     required: true
   prv-key-path:
     description: GitHub App Private Key Path
@@ -45,18 +45,26 @@ runs:
     - name: Credentials
       shell: bash
       env:
-        GH_APP_PRV_KEY: ${{ inputs.prv-key }}
+        GH_APP_PRV_KEY_BASE64: ${{ inputs.prv-key-base64 }}
         GH_APP_PRV_KEY_PATH: ${{ inputs.prv-key-path }}
         GH_APP_OR_CLIENT_ID: ${{ inputs.client-id || inputs.app-id }}
       run: |
-        echo "${GH_APP_PRV_KEY}" > "${GH_APP_PRV_KEY_PATH}"
+        echo "${GH_APP_PRV_KEY_BASE64}" | base64 -d > "${GH_APP_PRV_KEY_PATH}"
         echo "GH_APP_PRV_KEY_PATH=${GH_APP_PRV_KEY_PATH}" >> $GITHUB_ENV
         echo "GH_APP_OR_CLIENT_ID=${GH_APP_OR_CLIENT_ID}" >> $GITHUB_ENV
 
+    ## Note:
+    ## The `token` value should be masked with:
+    ## echo "::add-mask::${GH_TOKEN}"
+    ## but this function has a bug that
+    ## still leaks the secret. See:
+    ## https://github.com/actions/runner/issues/475
+    ## ! issue open since 2020
     - name: Authenticate
       id: auth
       shell: bash
       run: |
         GH_TOKEN=$(gh-app-token.sh)
-        echo "token=${GH_TOKEN}" >> $GITHUB_OUTPUT
+        # echo "::add-mask::${GH_TOKEN}" # broken
+        echo "token=${GH_TOKEN}" >> $GITHUB_OUTPUT # let's leak it for now
         rm -f "${GH_APP_PRV_KEY_PATH}"

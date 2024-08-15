@@ -85,9 +85,9 @@ jobs:
 
           [ -z "${GH_APP_ID}" ] && echo "GH_APP_ID is empty"
 
-          [ -z "${GH_APP_CLIENT_ID}" ] && echo "GH_APP_ID is empty"
+          [ -z "${GH_APP_CLIENT_ID}" ] && echo "GH_APP_CLIENT_ID is empty"
 
-          [ -z "${GH_APP_PRV_KEY}" ] && echo "GH_APP_ID is empty"
+          [ -z "${GH_APP_PRV_KEY}" ] && echo "GH_APP_PRV_KEY is empty"
 
       - name: Authenticate Git
         id: auth

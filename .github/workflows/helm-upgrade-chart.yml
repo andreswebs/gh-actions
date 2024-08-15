@@ -23,28 +23,13 @@ on:
         required: true
         type: string
 
-      gh-app-client-id:
-        type: string
-        required: false
-        default: ""
-
-      gh-app-id:
-        type: string
-        required: false
-        default: ""
-
-      gh-app-prv-key:
-        type: string
-        required: false
-        default: ""
-
     secrets:
       gh-app-client-id:
         required: false
       gh-app-id:
         required: false
       gh-app-prv-key:
-        required: false
+        required: true
 
 jobs:
   upgrade-chart:
@@ -55,9 +40,9 @@ jobs:
         shell: bash
 
     env:
-      GH_APP_ID: ${{ secrets.gh-app-id || inputs.gh-app-id }}
-      GH_APP_CLIENT_ID: ${{ secrets.gh-app-client-id || inputs.gh-app-client-id }}
-      GH_APP_PRV_KEY: ${{ secrets.gh-app-prv-key || inputs.gh-app-prv-key }}
+      GH_APP_ID: ${{ secrets.gh-app-id }}
+      GH_APP_CLIENT_ID: ${{ secrets.gh-app-client-id }}
+      GH_APP_PRV_KEY: ${{ secrets.gh-app-prv-key }}
 
     steps:
       - name: Get image value

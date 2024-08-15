@@ -85,7 +85,7 @@ jobs:
         run: |
           {
             echo 'gh-app-prv-key<<ENDOFTEXT'
-            echo "${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" | base64 -d
+            echo "${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key }}}" | base64 -d
             echo ENDOFTEXT
           } >> $GITHUB_OUTPUT
           echo "gh-app-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" >> $GITHUB_OUTPUT

@@ -24,10 +24,10 @@ on:
         type: string
 
     secrets:
-      gh-app-client-id:
-        required: false
+      # gh-app-client-id:
+      #   required: false
       gh-app-id:
-        required: false
+        required: true
       gh-app-prv-key:
         required: true
 
@@ -62,12 +62,6 @@ jobs:
 
       - name: Check credentials
         run: |
-          echo "${GH_APP_ID}"
-
-          echo "${GH_APP_CLIENT_ID}"
-
-          echo "${GH_APP_PRV_KEY}"
-
           [ -z "${GH_APP_ID}" ] && echo "GH_APP_ID is empty"
 
           [ -z "${GH_APP_CLIENT_ID}" ] && echo "GH_APP_CLIENT_ID is empty"

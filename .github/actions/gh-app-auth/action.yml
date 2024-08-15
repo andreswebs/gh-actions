@@ -45,22 +45,21 @@ runs:
     - name: Credentials
       shell: bash
       env:
-        GITHUB_APP_ID: ${{ inputs.app-id }}
-        GITHUB_APP_CLIENT_ID: ${{ inputs.client-id }}
-        GITHUB_APP_PRV_KEY: ${{ inputs.prv-key }}
-        GITHUB_APP_PRV_KEY_PATH: ${{ inputs.prv-key-path }}
+        GH_APP_OR_CLIENT_ID: ${{ inputs.client-id || inputs.app-id }}
+        GH_APP_PRV_KEY: ${{ inputs.prv-key }}
+        GH_APP_PRV_KEY_PATH: ${{ inputs.prv-key-path }}
       run: |
-        echo "::add-mask::${GITHUB_APP_PRV_KEY}"
-        echo "${GITHUB_APP_PRV_KEY}" > "${GITHUB_APP_PRV_KEY_PATH}"
-        echo "GITHUB_APP_PRV_KEY_PATH=${GITHUB_APP_PRV_KEY_PATH}" >> $GITHUB_ENV
-        echo "GITHUB_APP_ID=${GITHUB_APP_ID}" >> $GITHUB_ENV
-        echo "GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}" >> $GITHUB_ENV
+        echo "::add-mask::${GH_APP_PRV_KEY}"
+        echo "${GH_APP_PRV_KEY}" > "${GH_APP_PRV_KEY_PATH}"
+        echo "GH_APP_PRV_KEY_PATH=${GH_APP_PRV_KEY_PATH}" >> $GITHUB_ENV
+        echo "GH_APP_ID=${GH_APP_ID}" >> $GITHUB_ENV
+        echo "GH_APP_CLIENT_ID=${GH_APP_CLIENT_ID}" >> $GITHUB_ENV
 
     - name: Authenticate
       id: auth
       shell: bash
       run: |
-        GITHUB_TOKEN=$(gh-app-token.sh)
-        echo "::add-mask::${GITHUB_TOKEN}"
-        echo "token=${GITHUB_TOKEN}" >> $GITHUB_OUTPUT
-        rm -f "${GITHUB_APP_PRV_KEY_PATH}"
+        GH_TOKEN=$(gh-app-token.sh)
+        echo "::add-mask::${GH_TOKEN}"
+        echo "token=${GH_TOKEN}" >> $GITHUB_OUTPUT
+        rm -f "${GH_APP_PRV_KEY_PATH}"

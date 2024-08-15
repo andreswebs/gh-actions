@@ -103,7 +103,7 @@ jobs:
 
       - name: Authenticate Git
         id: auth
-        uses: andreswebs/gh-actions/.github/actions/gh-app-auth@dev
+        uses: andreswebs/gh-actions/.github/actions/gh-app-auth@main
         with:
           app-id: ${{ steps.secret.outputs.gh-app-id }}
           client-id: ${{ steps.secret.outputs.gh-app-client-id }}

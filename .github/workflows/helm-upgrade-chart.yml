@@ -25,7 +25,9 @@ on:
 
     secrets:
       gh-app-client-id:
-        required: true
+        required: false
+      gh-app-id:
+        required: false
       gh-app-prv-key:
         required: true
 
@@ -57,6 +59,7 @@ jobs:
         id: auth
         uses: andreswebs/gh-actions/.github/actions/gh-app-auth@main
         with:
+          app-id: ${{ secrets.gh-app-id }}
           client-id: ${{ secrets.gh-app-client-id }}
           prv-key: ${{ secrets.gh-app-prv-key }}
 

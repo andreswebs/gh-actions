@@ -5,6 +5,36 @@ on:
       runs-on:
         required: true
         type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: true
+        type: string
+      role-chaining:
+        required: false
+        type: boolean
+        default: false
+
+      secret-id:
+        required: false
+        type: string
+        default: github-app
+
+      secret-key-app-id:
+        required: false
+        type: string
+        default: GITHUB_APP_ID
+
+      secret-key-app-client-id:
+        required: false
+        type: string
+        default: GITHUB_APP_CLIENT_ID
+
+      secret-key-app-private-key:
+        required: false
+        type: string
+        default: GITHUB_APP_PRIVATE_KEY
 
       image-artifact:
         required: true
@@ -23,14 +53,6 @@ on:
         required: true
         type: string
 
-    secrets:
-      # gh-app-client-id:
-      #   required: false
-      gh-app-id:
-        required: true
-      gh-app-prv-key:
-        required: true
-
 jobs:
   upgrade-chart:
     runs-on: ${{ inputs.runs-on }}
@@ -40,11 +62,35 @@ jobs:
         shell: bash
 
     env:
-      GH_APP_ID: ${{ secrets.gh-app-id }}
-      GH_APP_CLIENT_ID: ${{ secrets.gh-app-client-id }}
-      GH_APP_PRV_KEY: ${{ secrets.gh-app-prv-key }}
+      SECRET_ALIAS: SECRET
 
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: ${{ inputs.role-chaining }}
+
+      - name: Get Secret
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        with:
+          parse-json-secrets: true
+          secret-ids: |
+            ${{ env.SECRET_ALIAS }},${{ inputs.secret-id }}
+
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings
+      - name: Configure Secret
+        id: secret
+        run: |
+          {
+            echo 'gh-app-prv-key<<ENDOFTEXT'
+            echo "${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" | base64 -d
+            echo ENDOFTEXT
+          } >> $GITHUB_OUTPUT
+          echo "gh-app-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" >> $GITHUB_OUTPUT
+          echo "gh-app-client-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-client-id }}}" >> $GITHUB_OUTPUT
+
       - name: Get image value
         id: image
         uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
@@ -61,20 +107,22 @@ jobs:
           echo "version=${APP_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check credentials
+        env:
+          GH_APP_ID: ${{ steps.secret.outputs.gh-app-id }}
+          GH_APP_CLIENT_ID: ${{ steps.secret.outputs.gh-app-client-id }}
+          GH_APP_PRV_KEY: ${{ steps.secret.outputs.gh-app-prv-key }}
         run: |
           [ -z "${GH_APP_ID}" ] && echo "GH_APP_ID is empty"
-
           [ -z "${GH_APP_CLIENT_ID}" ] && echo "GH_APP_CLIENT_ID is empty"
-
           [ -z "${GH_APP_PRV_KEY}" ] && echo "GH_APP_PRV_KEY is empty"
 
       - name: Authenticate Git
         id: auth
         uses: andreswebs/gh-actions/.github/actions/gh-app-auth@dev
         with:
-          app-id: ${{ env.gh-app-id }}
-          client-id: ${{ env.gh-app-client-id }}
-          prv-key: ${{ env.gh-app-prv-key }}
+          app-id: ${{ steps.secret.outputs.gh-app-id }}
+          client-id: ${{ steps.secret.outputs.gh-app-client-id }}
+          prv-key: ${{ steps.secret.outputs.gh-app-prv-key }}
 
       - name: Upgrade Chart
         uses: andreswebs/gh-actions/.github/actions/helm-chart-upgrade-via-pr@main

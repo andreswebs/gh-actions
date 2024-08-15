@@ -17,8 +17,8 @@ inputs:
     description: GitHub App Client ID
     required: false
     default: ""
-  prv-key-base64:
-    description: GitHub App Private Key encoded in base64
+  prv-key-b64:
+    description: GitHub App Private Key encoded in base64 format
     required: true
   prv-key-path:
     description: GitHub App Private Key Path
@@ -45,11 +45,11 @@ runs:
     - name: Credentials
       shell: bash
       env:
-        GH_APP_PRV_KEY_BASE64: ${{ inputs.prv-key-base64 }}
+        GH_APP_PRV_KEY_B64: ${{ inputs.prv-key-b64 }}
         GH_APP_PRV_KEY_PATH: ${{ inputs.prv-key-path }}
         GH_APP_OR_CLIENT_ID: ${{ inputs.client-id || inputs.app-id }}
       run: |
-        echo "${GH_APP_PRV_KEY_BASE64}" | base64 -d > "${GH_APP_PRV_KEY_PATH}"
+        echo "${GH_APP_PRV_KEY_B64}" | base64 -d > "${GH_APP_PRV_KEY_PATH}"
         echo "GH_APP_PRV_KEY_PATH=${GH_APP_PRV_KEY_PATH}" >> $GITHUB_ENV
         echo "GH_APP_OR_CLIENT_ID=${GH_APP_OR_CLIENT_ID}" >> $GITHUB_ENV
 

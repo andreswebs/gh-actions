@@ -31,7 +31,7 @@ on:
         type: string
         default: GITHUB_APP_CLIENT_ID
 
-      secret-key-app-private-key:
+      secret-key-app-private-key-base64:
         required: false
         type: string
         default: GITHUB_APP_PRIVATE_KEY
@@ -79,18 +79,12 @@ jobs:
           secret-ids: |
             ${{ env.SECRET_ALIAS }},${{ inputs.secret-id }}
 
-      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings
       - name: Configure Secret
         id: secret
         run: |
-          GH_APP_PRV_KEY=$(echo "${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key }}}" | base64 -d)
-          {
-            echo 'gh-app-prv-key<<ENDOFTEXT'
-            echo "${GH_APP_PRV_KEY}"
-            echo ENDOFTEXT
-          } >> $GITHUB_OUTPUT
           echo "gh-app-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" >> $GITHUB_OUTPUT
           echo "gh-app-client-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-client-id }}}" >> $GITHUB_OUTPUT
+          echo "gh-app-prv-key-b64=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key-base64 }}}" >> $GITHUB_OUTPUT
 
       - name: Get image value
         id: image
@@ -113,7 +107,7 @@ jobs:
         with:
           app-id: ${{ steps.secret.outputs.gh-app-id }}
           client-id: ${{ steps.secret.outputs.gh-app-client-id }}
-          prv-key: ${{ steps.secret.outputs.gh-app-prv-key }}
+          prv-key-b64: ${{ steps.secret.outputs.gh-app-prv-key-b64 }}
 
       - name: Upgrade Chart
         uses: andreswebs/gh-actions/.github/actions/helm-chart-upgrade-via-pr@main

@@ -84,7 +84,6 @@ jobs:
         id: secret
         run: |
           GH_APP_PRV_KEY=$(echo "${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key }}}" | base64 -d)
-          echo "::add-mask::${GH_APP_PRV_KEY}"
           {
             echo 'gh-app-prv-key<<ENDOFTEXT'
             echo "${GH_APP_PRV_KEY}"

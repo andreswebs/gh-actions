@@ -109,9 +109,6 @@ on:
           image tag to be deployed.
 
     outputs:
-      image-name:
-        description: The image name relative to the ECR registry, in the format `<REPO_NAME>:<IMAGE_TAG>`
-        value: ${{ jobs.push.outputs.image-name }}
       images:
         description: "Matrix output containing all published images"
         value: ${{ jobs.push.outputs.images }}
@@ -125,7 +122,6 @@ jobs:
         shell: bash
 
     outputs:
-      image-name: ${{ steps.image-build.outputs.image-name }}
       images: ${{ steps.matrix-out.outputs.images }}
 
     steps:
@@ -173,7 +169,7 @@ jobs:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
       ## https://github.com/orgs/community/discussions/37942
       - name: Save image value
-        if: inputs.image-artifact
+        if: ${{ inputs.image-artifact }}
         uses: andreswebs/gh-actions/.github/actions/value-as-artifact@main
         with:
           key: ${{ inputs.image-artifact }}

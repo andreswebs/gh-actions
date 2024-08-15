@@ -1,6 +1,6 @@
 ---
-name: Publish Amazon ECR Image
-description: Publish a container image to Amazon ECR
+name: Push Amazon ECR Image
+description: Build and push a container image to Amazon ECR
 
 inputs:
   aws-region:

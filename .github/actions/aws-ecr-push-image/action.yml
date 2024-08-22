@@ -150,6 +150,8 @@ runs:
           [ -n "${EXISTING_TAG}" ] && unset IMAGE_TAG && unset EXISTING_TAG
         fi
 
+        if [ "${ADD_IMAGE_DEFAULT_TAG}" = "false" ]; then unset IMAGE_DEFAULT_TAG; fi
+
         if [ "${ADD_IMAGE_DEFAULT_TAG}" = "true" ]; then
           IMAGE_DEFAULT_TAG="${IMAGE_DEFAULT_TAG}${IMAGE_TAG_SUFFIX}"
           if [ "${REGISTRY_TYPE}" = "private" ] && [ "${MUTATE_IMAGE_DEFAULT_TAG}" = "false" ]; then

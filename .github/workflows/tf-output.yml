@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -9,7 +8,7 @@ on:
       environment:
         required: false
         type: string
-        default: null
+        default: ""
       working-directory:
         required: true
         type: string
@@ -22,7 +21,7 @@ on:
       tfvars:
         required: false
         type: string
-        default: null
+        default: ""
       output-file:
         required: true
         type: string
@@ -33,9 +32,7 @@ on:
         value: ${{ jobs.tf-output.outputs.output-file }}
 
 jobs:
-
   tf-output:
-
     runs-on: ${{ inputs.runs-on }}
 
     defaults:
@@ -47,7 +44,6 @@ jobs:
       output-file: ${{ steps.tf-output.outputs.output-file }}
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 

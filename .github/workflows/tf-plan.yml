@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -18,7 +17,7 @@ on:
       role-to-assume:
         required: false
         type: string
-        default: null
+        default: ""
       role-chaining:
         required: false
         type: boolean
@@ -26,7 +25,7 @@ on:
       tfvars:
         required: false
         type: string
-        default: null
+        default: ""
       tfbackend:
         required: true
         type: string
@@ -41,15 +40,12 @@ on:
       images-tfvars:
         required: false
         type: string
-        default: null
+        default: ""
 
     outputs:
       tfplan:
         description: The filename used to save the `.tfplan` file
         value: ${{ jobs.tf-plan.outputs.tfplan }}
-      fmt-outcome:
-        description: Outcome of `terraform fmt -check`
-        value: ${{ jobs.tf-plan.outputs.fmt-outcome }}
       init-outcome:
         description: Outcome of `terraform init`
         value: ${{ jobs.tf-plan.outputs.init-outcome }}
@@ -65,7 +61,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-
   tf-plan:
     name: TF Plan - ${{ inputs.environment }}
 
@@ -78,13 +73,11 @@ jobs:
 
     outputs:
       tfplan: ${{ steps.tf-plan.outputs.tfplan }}
-      fmt-outcome: ${{ steps.outcomes.outputs.fmt-outcome }}
       init-outcome: ${{ steps.outcomes.outputs.init-outcome }}
       validate-outcome: ${{ steps.outcomes.outputs.validate-outcome }}
       plan-outcome: ${{ steps.outcomes.outputs.plan-outcome }}
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -133,11 +126,6 @@ jobs:
         run: |
           terraform fmt ${{ inputs.images-tfvars }}
 
-      - name: TF Format Check
-        id: fmt
-        run: |
-          terraform fmt -recursive -check
-
       - name: TF Validation
         id: validate
         run: |
@@ -158,7 +146,6 @@ jobs:
       - name: Record outcomes
         id: outcomes
         run: |
-          echo "fmt-outcome=${{ steps.fmt.outcome }}" >> $GITHUB_OUTPUT
           echo "init-outcome=${{ steps.init.outcome }}" >> $GITHUB_OUTPUT
           echo "validate-outcome=${{ steps.validate.outcome }}" >> $GITHUB_OUTPUT
           echo "plan-outcome=${{ steps.tf-plan.outcome }}" >> $GITHUB_OUTPUT
@@ -176,7 +163,6 @@ jobs:
           environment: ${{ inputs.environment }}
           working-directory: ${{ inputs.working-directory }}
           tfplan: ${{ steps.tf-plan.outputs.tfplan }}
-          fmt-outcome: ${{ steps.outcomes.outputs.fmt-outcome }}
           init-outcome: ${{ steps.outcomes.outputs.init-outcome }}
           validate-outcome: ${{ steps.outcomes.outputs.validate-outcome }}
           plan-outcome: ${{ steps.outcomes.outputs.plan-outcome }}

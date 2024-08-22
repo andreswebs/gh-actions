@@ -1,0 +1,50 @@
+---
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      working-directory:
+        required: false
+        type: string
+        default: ${{ github.workspace }}
+    outputs:
+      fmt-outcome:
+        description: Outcome of `terraform fmt -check`
+        value: ${{ jobs.tf-plan.outputs.fmt-outcome }}
+
+jobs:
+  tf-fmt-check:
+    name: TF fmt check
+
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+
+    outputs:
+      fmt-outcome: ${{ steps.outcomes.outputs.fmt-outcome }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: TF Format Check
+        id: fmt
+        run: |
+          terraform fmt -recursive -diff -check
+
+      - name: Record outcomes
+        id: outcomes
+        run: |
+          echo "fmt-outcome=${{ steps.fmt.outcome }}" >> $GITHUB_OUTPUT

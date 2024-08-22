@@ -9,13 +9,11 @@ description: |
 inputs:
   working-directory:
     description: The directory where to run `terraform` commands
-    type: string
     required: true
   tfbackend:
     description: |
       Name of a `.tfbackend` file to use;
       the file must be present in the working directory
-    type: string
     required: true
 
 runs:

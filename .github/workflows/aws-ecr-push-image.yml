@@ -97,6 +97,11 @@ on:
         description: |
           Docker build args (list of --build-arg)
 
+      setup-qemu:
+        required: false
+        type: boolean
+        default: false
+
       ## `image-artifact` is a workaround for the following bug:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
       ## https://github.com/orgs/community/discussions/37942
@@ -164,6 +169,7 @@ jobs:
           context-dir: ${{ inputs.context-dir }}
           dockerfile: ${{ inputs.dockerfile }}
           build-args: ${{ inputs.build-args }}
+          setup-qemu: ${{ inputs.setup-qemu }}
 
       ## Workaround for bug:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret

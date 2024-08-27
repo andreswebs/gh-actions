@@ -52,6 +52,10 @@ inputs:
     description: Whether to set up Docker Buildx
     required: false
     default: "true"
+  setup-qemu:
+    description: Whether to set up QEMU
+    required: false
+    default: "false"
   context-dir:
     description: The directory for Docker build context
     required: false
@@ -83,6 +87,10 @@ runs:
       shell: bash
       run: |
         echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
+
+    - name: Set up QEMU
+      if: ${{ inputs.setup-qemu == 'true' }}
+      uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
       if: ${{ inputs.setup-docker-buildx == 'true' }}

@@ -31,9 +31,14 @@ on:
       add-image-default-tag:
         required: false
         type: boolean
-        default: false
+        default: true
       mutate-image-default-tag:
         description: Whether to mutate the default tag on the image
+        type: boolean
+        required: false
+        default: true
+      mutate-image-tag:
+        description: Whether to mutate the tag on the image
         type: boolean
         required: false
         default: true
@@ -163,6 +168,7 @@ jobs:
           image-tag-suffix: ${{ inputs.image-tag-suffix }}
           add-image-default-tag: ${{ inputs.add-image-default-tag }}
           mutate-image-default-tag: ${{ inputs.mutate-image-default-tag }}
+          mutate-image-tag: ${{ inputs.mutate-image-tag }}
           use-hash: ${{ inputs.use-hash }}
           use-short-hash: ${{ inputs.use-short-hash }}
           short-hash-length: ${{ inputs.short-hash-length }}

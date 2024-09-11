@@ -27,15 +27,15 @@ inputs:
   add-image-default-tag:
     description: Whether to add the default tag to the image
     required: false
-    default: "false"
+    default: "true"
   mutate-image-default-tag:
     description: Whether to mutate the default tag on the image
     required: false
-    default: "false"
+    default: "true"
   mutate-image-tag:
     description: Whether to mutate the tag on the image
     required: false
-    default: "false"
+    default: "true"
   image-tag-suffix:
     description: Add a suffix to all image tags
     required: false

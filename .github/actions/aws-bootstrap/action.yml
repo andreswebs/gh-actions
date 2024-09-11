@@ -54,10 +54,6 @@ runs:
 
     - name: Install AWS CLI
       if: contains(steps.aws-cli.outputs.result, 'not_installed')
-      uses: quipper/setup-aws-cli-action@main
-
-    - name: Install AWS CLI
-      if: contains(steps.aws-cli.outputs.result, 'not_installed')
       shell: bash
       id: install
       run: |

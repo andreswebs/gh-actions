@@ -154,8 +154,8 @@ runs:
                 --query "imageIds[?imageTag=='${IMAGE_TAG}'].imageTag" \
                 --output text | tr -d '\n'
             )
+            [ -n "${EXISTING_TAG}" ] && unset IMAGE_TAG && unset EXISTING_TAG
           fi
-          [ -n "${EXISTING_TAG}" ] && unset IMAGE_TAG && unset EXISTING_TAG
         fi
 
         if [ "${ADD_IMAGE_DEFAULT_TAG}" = "false" ]; then unset IMAGE_DEFAULT_TAG; fi

@@ -32,6 +32,10 @@ inputs:
     description: Whether to mutate the default tag on the image
     required: false
     default: "false"
+  mutate-image-tag:
+    description: Whether to mutate the tag on the image
+    required: false
+    default: "false"
   image-tag-suffix:
     description: Add a suffix to all image tags
     required: false
@@ -134,6 +138,7 @@ runs:
         IMAGE_DEFAULT_TAG: ${{ inputs.image-default-tag }}
         ADD_IMAGE_DEFAULT_TAG: ${{ inputs.add-image-default-tag }}
         MUTATE_IMAGE_DEFAULT_TAG: ${{ inputs.mutate-image-default-tag }}
+        MUTATE_IMAGE_TAG: ${{ inputs.mutate-image-tag }}
         CONTAINER_REGISTRY: ${{ github.event_name != 'pull_request' && steps.ecr-login.outputs.registry || '' }}
         CONTAINER_REPO_BASE_NAME: ${{ inputs.ecr-repo-name }}
         REGISTRY_TYPE: ${{ inputs.ecr-registry-type }}
@@ -147,7 +152,7 @@ runs:
 
         if [ -n "${IMAGE_TAG}" ]; then
           IMAGE_TAG="${IMAGE_TAG}${IMAGE_TAG_SUFFIX}"
-          if [ "${REGISTRY_TYPE}" = "private" ]; then
+          if [ "${REGISTRY_TYPE}" = "private" ] && [ "${MUTATE_IMAGE_TAG}" = "false" ]; then
             EXISTING_TAG=$(
               aws ecr list-images \
                 --repository-name "${CONTAINER_REPO_BASE_NAME}" \

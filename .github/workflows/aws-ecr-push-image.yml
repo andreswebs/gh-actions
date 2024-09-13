@@ -107,6 +107,12 @@ on:
         type: boolean
         default: false
 
+      platforms:
+        required: false
+        type: string
+        default: linux/amd64,linux/arm64
+        description: Docker platforms comma-separated list (--platform)
+
       ## `image-artifact` is a workaround for the following bug:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret
       ## https://github.com/orgs/community/discussions/37942
@@ -176,6 +182,7 @@ jobs:
           dockerfile: ${{ inputs.dockerfile }}
           build-args: ${{ inputs.build-args }}
           setup-qemu: ${{ inputs.setup-qemu }}
+          platforms: ${{ inputs.platforms }}
 
       ## Workaround for bug:
       ## [Bug] GitHub Actions does not set job output because it wrongly detects a secret

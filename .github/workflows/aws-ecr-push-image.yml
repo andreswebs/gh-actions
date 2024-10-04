@@ -196,7 +196,7 @@ jobs:
 
       - name: Matrix Outputs
         id: matrix-out
-        uses: cloudposse/github-action-matrix-outputs-write@main
+        uses: cloudposse/github-action-matrix-outputs-write@v1
         if: ${{ inputs.matrix-step-name && inputs.matrix-key }}
         with:
           matrix-step-name: ${{ inputs.matrix-step-name }}

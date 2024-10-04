@@ -40,7 +40,7 @@ jobs:
 
       - name: Read matrix outputs
         id: read
-        uses: cloudposse/github-action-matrix-outputs-read@main
+        uses: cloudposse/github-action-matrix-outputs-read@v1
         with:
           matrix-step-name: ${{ inputs.matrix-step-name }}
 

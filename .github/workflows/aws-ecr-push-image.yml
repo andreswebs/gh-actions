@@ -70,16 +70,6 @@ on:
         type: string
         default: ""
 
-      matrix-step-name:
-        required: false
-        type: string
-        default: ""
-
-      matrix-key:
-        required: false
-        type: string
-        default: ""
-
       config-artifact:
         required: false
         type: string
@@ -119,15 +109,10 @@ on:
       image-artifact:
         required: false
         type: string
-        default: image
+        default: ""
         description: |
           Name of an artifact file that will contain a string with the full
           image tag to be deployed.
-
-    outputs:
-      images:
-        description: "Matrix output containing all published images"
-        value: ${{ jobs.push.outputs.images }}
 
 jobs:
   push:
@@ -136,9 +121,6 @@ jobs:
     defaults:
       run:
         shell: bash
-
-    outputs:
-      images: ${{ steps.matrix-out.outputs.images }}
 
     steps:
       - name: Checkout repository
@@ -193,13 +175,3 @@ jobs:
         with:
           key: ${{ inputs.image-artifact }}
           value: ${{ steps.build.outputs.image }}
-
-      - name: Matrix Outputs
-        id: matrix-out
-        uses: cloudposse/github-action-matrix-outputs-write@v1
-        if: ${{ inputs.matrix-step-name && inputs.matrix-key }}
-        with:
-          matrix-step-name: ${{ inputs.matrix-step-name }}
-          matrix-key: ${{ inputs.matrix-key }}
-          outputs: |-
-            images: ${{ steps.build.outputs.images }}

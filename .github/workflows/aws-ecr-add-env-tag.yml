@@ -1,0 +1,41 @@
+---
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: false
+        type: string
+        default: ""
+      image-uri:
+        required: true
+        type: string
+
+jobs:
+  add-env-tag:
+    name: Add env tag to images
+    runs-on: ${{ inputs.runs-on }}
+
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Add env tag
+        id: env-tag
+        uses: andreswebs/gh-actions/.github/actions/aws-ecr-add-env-tag@main
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          environment: ${{ inputs.environment }}
+          image-uri: ${{ inputs.image-uri }}

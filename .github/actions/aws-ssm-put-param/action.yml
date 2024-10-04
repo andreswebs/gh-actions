@@ -13,13 +13,13 @@ inputs:
     description: (Optional) Enable role chaining?
     required: false
     default: "false"
-  parameter_name:
+  parameter-name:
     description: The parameter name
     required: true
-  parameter_value:
+  parameter-value:
     description: The parameter value
     required: true
-  parameter_type:
+  parameter-type:
     description: The parameter type
     required: false
     default: "SecureString"
@@ -46,9 +46,9 @@ runs:
       shell: bash
       id: put-param
       env:
-        PARAM_NAME: ${{ inputs.parameter_name }}
-        PARAM_VALUE: ${{ inputs.parameter_value }}
-        PARAM_TYPE: ${{ inputs.parameter_type }}
+        PARAM_NAME: ${{ inputs.parameter-name }}
+        PARAM_VALUE: ${{ inputs.parameter-value }}
+        PARAM_TYPE: ${{ inputs.parameter-type }}
       run: |
         aws-ssm-put-param.sh "${PARAM_NAME}" "${PARAM_VALUE}" "${PARAM_TYPE}"
 

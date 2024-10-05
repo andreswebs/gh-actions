@@ -6,9 +6,8 @@ on:
         required: true
         type: string
       working-directory:
-        required: false
+        required: true
         type: string
-        default: ${{ github.workspace }}
     outputs:
       fmt-outcome:
         description: Outcome of `terraform fmt -recursive -diff -check`

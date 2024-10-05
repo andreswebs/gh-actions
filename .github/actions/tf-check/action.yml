@@ -31,14 +31,16 @@ runs:
     - name: Install checkov if needed
       shell: bash
       run: |
-        if ! command -v checkov &> /dev/null; then
+        if ! command -v pipx &> /dev/null; then
           sudo apt-get update > /dev/null 2>&1
           sudo apt-get install --yes --quiet pipx
+        fi
+        if ! command -v checkov &> /dev/null; then
           pipx install checkov
         fi
 
     - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       with:
         terraform_wrapper: false
 

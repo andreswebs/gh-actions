@@ -42,7 +42,7 @@ runs:
         mkdir --parents ~/.terraform.d/plugin-cache
 
     - name: Cache Terraform plugins
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.terraform.d/plugin-cache
         key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}

@@ -8,23 +8,18 @@ inputs:
   working-directory:
     description: The directory where to run `terraform` commands
     required: true
-    type: string
   tfplan:
     description: Name of the tfplan file to use
     required: true
-    type: string
   upload-sarif:
     description: Upload SARIF?
     required: false
-    type: boolean
-    default: true
+    default: "true"
 
 runs:
-
   using: composite
 
   steps:
-
     - name: Install jq if needed
       shell: bash
       run: |

@@ -11,8 +11,8 @@ on:
         default: ${{ github.workspace }}
     outputs:
       fmt-outcome:
-        description: Outcome of `terraform fmt -check`
-        value: ${{ jobs.tf-plan.outputs.fmt-outcome }}
+        description: Outcome of `terraform fmt -recursive -diff -check`
+        value: ${{ jobs.tf-fmt-check.outputs.fmt-outcome }}
 
 jobs:
   tf-fmt-check:

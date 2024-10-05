@@ -15,14 +15,13 @@ on:
 
 jobs:
   tf-fmt-check:
-    name: TF fmt check
+    name: TF format check
 
     runs-on: ${{ inputs.runs-on }}
 
     defaults:
       run:
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
 
     outputs:
       fmt-outcome: ${{ steps.outcomes.outputs.fmt-outcome }}
@@ -40,6 +39,7 @@ jobs:
 
       - name: TF Format Check
         id: fmt
+        working-directory: ${{ inputs.working-directory }}
         run: |
           terraform fmt -recursive -diff -check
 

@@ -69,7 +69,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
 
     outputs:
       tfplan: ${{ steps.tf-plan.outputs.tfplan }}
@@ -128,11 +127,13 @@ jobs:
 
       - name: TF Validation
         id: validate
+        working-directory: ${{ inputs.working-directory }}
         run: |
           terraform validate -no-color
 
       - name: TF Plan - ${{ inputs.tfplan }}
         id: tf-plan
+        working-directory: ${{ inputs.working-directory }}
         run: |
           terraform plan -input=false -no-color -out=${{ inputs.tfplan }}
           echo "tfplan=${{ inputs.tfplan }}" >> $GITHUB_OUTPUT

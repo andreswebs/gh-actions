@@ -33,7 +33,7 @@ runs:
       run: |
         if ! command -v checkov &> /dev/null; then
           # sudo pip3 install checkov > /dev/null 2>&1
-          sudo pip3 install checkov > /dev/null 2>&1
+          sudo pip3 install checkov
         fi
 
     - name: Set up Terraform

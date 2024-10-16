@@ -113,8 +113,11 @@ runs:
         BRANCH_NAME=${BRANCH_NAME_PREFIX}${APP_NAME}${BRANCH_NAME_SUFFIX}
         TITLE="chore: ugrade ${APP_NAME} to ${APP_VERSION}"
 
-        git config user.name "${GH_ACTIONS_BOT_NAME}"
-        git config user.email "${GH_ACTIONS_BOT_EMAIL}"
+        # git config user.name "${GH_ACTIONS_BOT_NAME}"
+        # git config user.email "${GH_ACTIONS_BOT_EMAIL}"
+
+        git config user.name "$(git log -n 1 --pretty=format:%an)"
+        git config user.email "$(git log -n 1 --pretty=format:%ae)"
 
         git checkout -b "${BRANCH_NAME}"
 

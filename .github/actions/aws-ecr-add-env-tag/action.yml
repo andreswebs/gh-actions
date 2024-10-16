@@ -3,16 +3,6 @@ name: ECR add env tag
 description: Add custom formatted env tag to ECR image
 
 inputs:
-  aws-region:
-    description: AWS Region
-    required: true
-  role-to-assume:
-    description: IAM Role to assume for ECR commands
-    required: true
-  role-chaining:
-    description: (Optional) Enable role chaining?
-    required: false
-    default: "false"
   environment:
     description: The environment name to use
     required: true
@@ -22,7 +12,7 @@ inputs:
 
 outputs:
   value:
-    description: "The updated full image URI"
+    description: The updated full image URI
     value: ${{ steps.add-tag.outputs.image }}
 
 runs:
@@ -70,13 +60,6 @@ runs:
         ENV_TAG="${ENV_NAME}-${COMMIT_HASH}-${TIMESTAMP}"
         echo "value=${ENV_TAG}" >> $GITHUB_OUTPUT
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-region: ${{ inputs.aws-region }}
-        role-to-assume: ${{ inputs.role-to-assume }}
-        role-chaining: ${{ fromJSON(inputs.role-chaining) }}
-
     - name: Add env tag
       shell: bash
       id: add-tag
@@ -89,10 +72,3 @@ runs:
         add-image-tag.sh "${REPO_NAME}" "${EXISTING_TAG}" "${NEW_TAG}"
         IMAGE="${REGISTRY}/${REPO_NAME}:${NEW_TAG}"
         echo "image=${IMAGE}" >> $GITHUB_OUTPUT
-
-    - name: Unset AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      continue-on-error: true
-      with:
-        aws-region: ${{ inputs.aws-region }}
-        unset-current-credentials: true

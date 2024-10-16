@@ -1,0 +1,153 @@
+---
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
+      role-to-assume:
+        required: true
+        type: string
+      role-chaining:
+        required: false
+        type: boolean
+        default: false
+
+      secret-id:
+        required: false
+        type: string
+        default: github-app
+
+      secret-key-app-id:
+        required: false
+        type: string
+        default: GITHUB_APP_ID
+
+      secret-key-app-client-id:
+        required: false
+        type: string
+        default: GITHUB_APP_CLIENT_ID
+
+      secret-key-app-private-key-base64:
+        required: false
+        type: string
+        default: GITHUB_APP_PRIVATE_KEY
+
+      image-artifact:
+        required: true
+        type: string
+
+      git-repo:
+        required: true
+        type: string
+
+      git-ref:
+        required: false
+        type: string
+        default: main
+
+      branch-name-prefix:
+        required: false
+        type: string
+        default: auto-
+
+      branch-name-suffix:
+        required: false
+        type: string
+        default: ""
+
+      app-name:
+        required: true
+        type: string
+
+      app-dir:
+        required: true
+        type: string
+
+      app-file:
+        required: true
+        type: string
+
+      auto-merge:
+        required: false
+        type: boolean
+        default: false
+
+      yaml-path:
+        required: false
+        type: string
+        default: .image.tag
+
+jobs:
+  app-upgrade:
+    runs-on: ${{ inputs.runs-on }}
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      SECRET_ALIAS: SECRET
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-chaining: ${{ inputs.role-chaining }}
+
+      - name: Get Secret
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        with:
+          parse-json-secrets: true
+          secret-ids: |
+            ${{ env.SECRET_ALIAS }},${{ inputs.secret-id }}
+
+      - name: Configure Secret
+        id: secret
+        run: |
+          echo "gh-app-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" >> $GITHUB_OUTPUT
+          echo "gh-app-client-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-client-id }}}" >> $GITHUB_OUTPUT
+          echo "gh-app-prv-key-b64=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key-base64 }}}" >> $GITHUB_OUTPUT
+
+      - name: Get image value
+        id: image
+        uses: andreswebs/gh-actions/.github/actions/artifact-as-value@main
+        with:
+          key: ${{ inputs.image-artifact }}
+
+      - name: Get app version
+        id: app
+        shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.value }}
+        run: |
+          APP_VERSION=$(cut -d ':' -f 2 <(echo ${IMAGE}))
+          echo "version=${APP_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Authenticate Git
+        id: auth
+        uses: andreswebs/gh-actions/.github/actions/gh-app-auth@main
+        with:
+          app-id: ${{ steps.secret.outputs.gh-app-id }}
+          client-id: ${{ steps.secret.outputs.gh-app-client-id }}
+          prv-key-b64: ${{ steps.secret.outputs.gh-app-prv-key-b64 }}
+
+      - name: Upgrade
+        uses: andreswebs/gh-actions/.github/actions/app-upgrade-via-pr@main
+        with:
+          token: ${{ steps.auth.outputs.token }}
+          repository: ${{ inputs.git-repo }}
+          ref: ${{ inputs.git-ref }}
+          branch-name-prefix: ${{ inputs.branch-name-prefix }}
+          branch-name-suffix: ${{ inputs.branch-name-suffix }}
+          app-name: ${{ inputs.app-name }}
+          app-version: ${{ steps.app.outputs.version }}
+          app-dir: ${{ inputs.app-dir }}
+          app-file: ${{ inputs.app-file }}
+          auto-merge: ${{ inputs.auto-merge }}
+          yaml-path: ${{ inputs.yaml-path }}

@@ -1,27 +1,29 @@
 ---
-name: Helm Chart Upgrade via PR
+name: Upgrade k8s app config via PR
 
 description: |
-  Checkout a GitHub repository, upgrade a specified Helm chart within it,
+  Checkout a GitHub repository, upgrade a specified Kubernetes configuration within it,
   and create a PR with the changes.
 
 inputs:
-  chart-dir:
-    description: File system path of the Helm chart directory
+  app-name:
+    description: The app name. Used for naming the generated PR branch
     required: true
-  chart-name:
-    description: Name of the Helm chart
+  app-dir:
+    description: File system path of the configuration directory
     required: true
-  chart-version:
-    description: Chart version to set (.version in Chart.yaml)
-    required: false
-    default: ""
+  app-file:
+    description: File name to update (must be a YAML file)
+    required: true
   app-version:
-    description: Application version to set (.appVersion in Chart.yaml)
+    description: Application version to set (value in the selected YAML file)
+    required: true
+  yaml-path:
+    description: The YAML path to update with the given app-version
     required: false
-    default: ""
+    default: .image.tag
   token:
-    description: GitHub token with write access to the Helm chart repository
+    description: GitHub token with write access to the configuration repository
     required: true
   repository:
     description: Repository name
@@ -30,6 +32,10 @@ inputs:
     description: Branch name
     required: false
     default: main
+  auto-merge:
+    description: (Optional) Automatically approve and merge the PR?
+    required: false
+    default: "false"
 
   branch-name-prefix:
     description: |
@@ -41,8 +47,7 @@ inputs:
   branch-name-suffix:
     description: |
       A suffix to append to the branch name;
-      overrides the default:
-       `-${CHART_VERSION}-${APP_VERSION}`
+      overrides the default: `-${APP_VERSION}`
     required: false
     default: ""
 
@@ -74,34 +79,24 @@ runs:
 
     - name: Version
       shell: bash
-      working-directory: ${{ inputs.chart-dir }}
+      working-directory: ${{ inputs.app-dir }}
       env:
+        YAML_PATH: ${{ inputs.yaml-path }}
         APP_VERSION: ${{ inputs.app-version }}
-        CHART_VERSION: ${{ inputs.chart-version }}
+        APP_FILE: ${{ inputs.app-file }}
       run: |
-        if [ -n "${APP_VERSION}" ]; then
-          yq -i ".appVersion = \"${APP_VERSION}\"" "Chart.yaml"
-          yq -i ".deployment.image.tag = \"${APP_VERSION}\"" "values.yaml"
-        else
-          APP_VERSION=$(yq ".appVersion" < "Chart.yaml")
-        fi
-        echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
-
-        if [ -n "${CHART_VERSION}" ]; then
-          yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
-        else
-          CHART_VERSION=$(yq ".version" < "Chart.yaml")
-        fi
-        echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+        yq -i "${YAML_PATH} = \"${APP_VERSION}\"" "${APP_FILE}"
 
     - name: Create PR
       shell: bash
       env:
-        CHART_NAME: ${{ inputs.chart-name }}
+        APP_NAME: ${{ inputs.app-name }}
+        APP_VERSION: ${{ inputs.app-version }}
         BRANCH_NAME_PREFIX: ${{ inputs.branch-name-prefix }}
         BRANCH_NAME_SUFFIX: ${{ inputs.branch-name-suffix }}
         BASE: ${{ inputs.ref }}
         GH_TOKEN: ${{ inputs.token }}
+        AUTO_MERGE: ${{ inputs.auto-merge }}
 
         ## github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         ## Sources:
@@ -112,12 +107,11 @@ runs:
 
       run: |
         if [ -z "${BRANCH_NAME_SUFFIX}" ]; then
-          if [ -n "${CHART_VERSION}" ]; then BRANCH_NAME_SUFFIX="-${CHART_VERSION}"; fi
-          if [ -n "${APP_VERSION}" ]; then BRANCH_NAME_SUFFIX="${BRANCH_NAME_SUFFIX}-${APP_VERSION}"; fi
+          BRANCH_NAME_SUFFIX="-${APP_VERSION}"
         fi
 
-        BRANCH_NAME=${BRANCH_NAME_PREFIX}${CHART_NAME}${BRANCH_NAME_SUFFIX}
-        TITLE="chore: update ${CHART_NAME} ${CHART_VERSION} ${APP_VERSION}"
+        BRANCH_NAME=${BRANCH_NAME_PREFIX}${APP_NAME}${BRANCH_NAME_SUFFIX}
+        TITLE="chore: ugrade ${APP_NAME} to ${APP_VERSION}"
 
         git config user.name "${GH_ACTIONS_BOT_NAME}"
         git config user.email "${GH_ACTIONS_BOT_EMAIL}"
@@ -134,3 +128,8 @@ runs:
           --title "${TITLE}" \
           --head "${BRANCH_NAME}" \
           --base "${BASE}"
+
+        if [ "${AUTO_MERGE}" == "true" ]; then
+          # gh pr review --approve
+          gh pr merge --auto --delete-branch --squash "${BRANCH_NAME}"
+        fi

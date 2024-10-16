@@ -57,7 +57,7 @@ runs:
         COMMIT_HASH: ${{ github.sha }}
       run: |
         TIMESTAMP=$(date -u +%s)
-        ENV_TAG="${ENV_NAME}-${COMMIT_HASH}-${TIMESTAMP}"
+        ENV_TAG="${ENV_NAME}}-${TIMESTAMP}-${COMMIT_HASH"
         echo "value=${ENV_TAG}" >> $GITHUB_OUTPUT
 
     - name: Add env tag

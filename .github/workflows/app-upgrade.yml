@@ -138,7 +138,7 @@ jobs:
           prv-key-b64: ${{ steps.secret.outputs.gh-app-prv-key-b64 }}
 
       - name: Upgrade
-        uses: andreswebs/gh-actions/.github/actions/app-upgrade-via-pr@dev
+        uses: andreswebs/gh-actions/.github/actions/app-upgrade-via-pr@main
         with:
           token: ${{ steps.auth.outputs.token }}
           repository: ${{ inputs.git-repo }}

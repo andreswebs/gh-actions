@@ -130,5 +130,5 @@ runs:
           --base "${BASE}"
 
         if [ "${AUTO_MERGE}" == "true" ]; then
-          gh pr merge --admin --auto --delete-branch --squash "${BRANCH_NAME}"
+          gh pr merge --admin --delete-branch --squash "${BRANCH_NAME}"
         fi

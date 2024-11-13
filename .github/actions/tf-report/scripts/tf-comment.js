@@ -47,9 +47,9 @@ async function githubComment({ github, context }) {
       body: output,
     });
 
-    for (let i = 0; i < plans.length; i++) {
+    for (let i = 0; i < chunks.length; i++) {
       output = `## Terraform Plan${envComment} - Part ${i + 1} of ${
-        plans.length
+        chunks.length
       }\n\n`;
       output += "<details>\n\n";
       output += "<summary>Show Plan</summary>\n\n";

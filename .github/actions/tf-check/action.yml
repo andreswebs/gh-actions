@@ -15,6 +15,10 @@ inputs:
     description: Upload SARIF?
     required: false
     default: "true"
+  results-file:
+    description: Name of the results file to use
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -50,9 +54,23 @@ runs:
       run: |
         terraform show -json ${{ inputs.tfplan }} | jq '.' > ${{ inputs.tfplan }}.json
 
+    - name: Results name
+      id: results-name
+      shell: bash
+      env:
+        RESULTS_FILE: ${{ inputs.results-file }}
+        TFPLAN_FILE: ${{ inputs.tfplan }}
+      run: |
+        if [ -z "${RESULTS_FILE}" ]; then
+          RESULTS_FILE="${TFPLAN_FILE}.checkov.results.sarif"
+        fi
+        echo "filename=${RESULTS_FILE}" >> $GITHUB_OUTPUT
+
     - name: Checkov
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        RESULTS_FILE: ${{ steps.results-name.outputs.filename }}
       run: |
         checkov \
             --file ${{ inputs.tfplan }}.json \
@@ -61,16 +79,16 @@ runs:
             --deep-analysis \
             --soft-fail \
             --output sarif \
-            --output-file-path checkov.results.sarif
+            --output-file-path "${RESULTS_FILE}"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        path: ${{ inputs.working-directory }}/checkov.results.sarif
-        name: checkov.results.sarif
+        path: ${{ inputs.working-directory }}/${{ steps.results-name.outputs.filename }}
+        name: ${{ steps.results-name.outputs.filename }}
 
     - name: Upload SARIF file
-      if: ${{ inputs.upload-sarif }}
+      if: ${{ fromJSON(inputs.upload-sarif) }}
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: ${{ inputs.working-directory }}/checkov.results.sarif
+        sarif_file: ${{ inputs.working-directory }}/${{ steps.results-name.outputs.filename }}

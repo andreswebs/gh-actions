@@ -54,7 +54,7 @@ async function githubComment({ github, context }) {
       output += "<details>\n\n";
       output += "<summary>Show Plan</summary>\n\n";
       output += "```\n\n";
-      output += `${plans[i]}\n\n`;
+      output += `${chunks[i]}\n\n`;
       output += "```\n\n";
       output += "</details>\n\n";
       output += `**Triggered by @${context.actor}, on Event \`${context.eventName}\`**\n`;

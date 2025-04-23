@@ -19,6 +19,10 @@ inputs:
     description: Name of the results file to use
     required: false
     default: ""
+  checkov-skip-check:
+    description: Comma-separated list of checkov rules to skip
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -71,6 +75,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         RESULTS_FILE: ${{ steps.results-name.outputs.filename }}
+        CKV_SKIP_CHECK: ${{ inputs.checkov-skip-check }}
       run: |
         checkov \
             --file ${{ inputs.tfplan }}.json \

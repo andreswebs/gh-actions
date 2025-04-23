@@ -41,6 +41,10 @@ on:
         required: false
         type: string
         default: ""
+      checkov-skip-check:
+        required: false
+        type: string
+        default: ""
 
     outputs:
       tfplan:
@@ -142,6 +146,7 @@ jobs:
         with:
           working-directory: ${{ inputs.working-directory }}
           tfplan: ${{ steps.tf-plan.outputs.tfplan }}
+          checkov-skip-check: ${{ inputs.checkov-skip-check }}
 
       - name: Record outcomes
         id: outcomes

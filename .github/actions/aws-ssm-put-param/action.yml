@@ -7,6 +7,14 @@ inputs:
     description: AWS Region
     required: false
     default: us-east-1
+  parent-role-to-assume:
+    description: (Optional) Parent IAM role to assume
+    required: false
+    default: ""
+  parent-role-chaining:
+    description: (Optional) Enable parent role chaining?
+    required: false
+    default: "false"
   role-to-assume:
     description: (Optional) IAM role to assume
     required: false
@@ -36,6 +44,14 @@ runs:
         SCRIPTS_PATH="${{ github.action_path }}/scripts"
         chmod +x "${SCRIPTS_PATH}/aws-ssm-put-param"
         echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
+    - name: Configure AWS Credentials
+      if: startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.parent-role-to-assume }}
+        role-chaining: ${{ fromJSON(inputs.parent-role-chaining) }}
 
     - name: Configure AWS Credentials
       if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')

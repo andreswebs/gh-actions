@@ -22,7 +22,7 @@ runs:
   steps:
     - uses: actions/setup-node@v4
       with:
-        node-version: 22
+        node-version: lts
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3
@@ -39,7 +39,7 @@ runs:
       shell: bash
       run: |
         echo 'plugin_cache_dir="${HOME}/.terraform.d/plugin-cache"' > ~/.terraformrc
-        mkdir --parents ~/.terraform.d/plugin-cache
+        mkdir --parents "${HOME}/.terraform.d/plugin-cache"
 
     - name: Cache Terraform plugins
       uses: actions/cache@v4

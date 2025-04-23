@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+
+DOWNLOAD_URL="https://awscli.amazonaws.com/awscli-exe-${OS}-${ARCH}.zip"
+
+TMP_WORKDIR="$(mktemp -d -t awscli.XXXXXXXXX)"
+TMP_FILE="${TMP_WORKDIR}/awscli.zip"
+
+function finish {
+  rm -rf "${TMP_WORKDIR}"
+}
+
+trap finish EXIT
+
+curl \
+    --fail \
+    --silent \
+    --location \
+    --output "${TMP_FILE}" \
+    "${DOWNLOAD_URL}"
+
+unzip -qq awscliv2.zip && ./aws/install && rm -rf ./aws awscliv2.zip
+unzip -qq "${TMP_FILE}" -d "${TMP_WORKDIR}"
+cd "${TMP_WORKDIR}" || exit 1
+aws/install

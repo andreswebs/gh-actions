@@ -5,10 +5,12 @@ description: Create or update an SSM parameter
 inputs:
   aws-region:
     description: AWS Region
-    required: true
+    required: false
+    default: us-east-1
   role-to-assume:
-    description: IAM role to assume
-    required: true
+    description: (Optional) IAM role to assume
+    required: false
+    default: ""
   role-chaining:
     description: (Optional) Enable role chaining?
     required: false
@@ -32,10 +34,11 @@ runs:
       shell: bash
       run: |
         SCRIPTS_PATH="${{ github.action_path }}/scripts"
-        chmod +x "${SCRIPTS_PATH}/aws-ssm-put-param.sh"
+        chmod +x "${SCRIPTS_PATH}/aws-ssm-put-param"
         echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
 
     - name: Configure AWS Credentials
+      if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}
@@ -50,9 +53,10 @@ runs:
         PARAM_VALUE: ${{ inputs.parameter-value }}
         PARAM_TYPE: ${{ inputs.parameter-type }}
       run: |
-        aws-ssm-put-param.sh "${PARAM_NAME}" "${PARAM_VALUE}" "${PARAM_TYPE}"
+        aws-ssm-put-param "${PARAM_NAME}" "${PARAM_VALUE}" "${PARAM_TYPE}"
 
     - name: Unset AWS Credentials
+      if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')
       uses: aws-actions/configure-aws-credentials@v4
       continue-on-error: true
       with:

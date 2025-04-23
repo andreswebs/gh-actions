@@ -49,7 +49,7 @@ runs:
       if: contains(steps.aws-cli.outputs.result, 'not_installed')
       run: |
         SCRIPTS_PATH="${{ github.action_path }}/scripts"
-        chmod +x "${SCRIPTS_PATH}/install-awscliv2"
+        chmod +x "${SCRIPTS_PATH}/install-awscli"
         echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
 
     - name: Install AWS CLI
@@ -57,7 +57,7 @@ runs:
       shell: bash
       id: install
       run: |
-        sudo install-awscliv2
+        sudo install-awscli
 
     - name: Configure AWS Credentials
       if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')

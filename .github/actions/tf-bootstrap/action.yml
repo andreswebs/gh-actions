@@ -22,7 +22,7 @@ runs:
   steps:
     - uses: actions/setup-node@v4
       with:
-        node-version: lts
+        node-version: latest
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v3

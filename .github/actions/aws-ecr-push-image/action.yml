@@ -5,12 +5,22 @@ description: Build and push a container image to Amazon ECR
 inputs:
   aws-region:
     description: The AWS region to use
-    required: true
+    required: false
+    default: us-east-1
+  parent-role-to-assume:
+    description: (Optional) Parent IAM role to assume
+    required: false
+    default: ""
+  parent-role-chaining:
+    description: (Optional) Enable parent role chaining?
+    required: false
+    default: "false"
   role-to-assume:
-    description: The IAM role to assume
-    required: true
+    description: (Optional) IAM role to assume
+    required: false
+    default: ""
   role-chaining:
-    description: Whether to chain roles
+    description: (Optional) Enable role chaining?
     required: false
     default: "false"
   ecr-repo-name:
@@ -117,7 +127,15 @@ runs:
       uses: docker/setup-buildx-action@v3
 
     - name: Configure AWS Credentials
-      if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' && startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::') }}
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.parent-role-to-assume }}
+        role-chaining: ${{ fromJSON(inputs.parent-role-chaining) }}
+
+    - name: Configure AWS Credentials
+      if: ${{ github.event_name != 'pull_request' && startsWith(inputs.role-to-assume, 'arn:aws:iam::') }}
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}

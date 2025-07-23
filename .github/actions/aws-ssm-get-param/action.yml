@@ -1,6 +1,6 @@
 ---
-name: Put SSM Parameter
-description: Create or update an SSM parameter
+name: Get SSM Parameter
+description: Get the value of an SSM parameter
 
 inputs:
   aws-region:
@@ -26,13 +26,11 @@ inputs:
   parameter-name:
     description: The parameter name
     required: true
-  parameter-value:
+
+outputs:
+  value:
+    value: ${{ steps.get-param.outputs.value }}
     description: The parameter value
-    required: true
-  parameter-type:
-    description: The parameter type
-    required: false
-    default: SecureString
 
 runs:
   using: composite
@@ -42,7 +40,7 @@ runs:
       shell: bash
       run: |
         SCRIPTS_PATH="${{ github.action_path }}/scripts"
-        chmod +x "${SCRIPTS_PATH}/aws-ssm-put-param"
+        chmod +x "${SCRIPTS_PATH}/aws-ssm-get-param"
         echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
 
     - name: Configure AWS Credentials
@@ -61,15 +59,14 @@ runs:
         role-to-assume: ${{ inputs.role-to-assume }}
         role-chaining: ${{ fromJSON(inputs.role-chaining) }}
 
-    - name: Put SSM parameter
+    - name: Get SSM parameter
       shell: bash
-      id: put-param
+      id: get-param
       env:
         PARAM_NAME: ${{ inputs.parameter-name }}
-        PARAM_VALUE: ${{ inputs.parameter-value }}
-        PARAM_TYPE: ${{ inputs.parameter-type }}
       run: |
-        aws-ssm-put-param "${PARAM_NAME}" "${PARAM_VALUE}" "${PARAM_TYPE}"
+        VALUE=$(aws-ssm-get-param "${PARAM_NAME}")
+        echo "value=${VALUE}" >> $GITHUB_OUTPUT
 
     - name: Unset AWS Credentials
       if: startsWith(inputs.role-to-assume, 'arn:aws:iam::') || startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')

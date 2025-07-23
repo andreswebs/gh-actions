@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+set -o pipefail
+
+NAME="${1}"
+
+export AWS_PAGER=""
+
+aws ssm get-parameter \
+  --name "${NAME}" \
+  --with-decryption \
+  --query 'Parameter.Value' \
+  --output text

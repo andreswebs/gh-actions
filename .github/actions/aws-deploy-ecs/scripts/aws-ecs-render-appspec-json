@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+set -o pipefail
+
+TASK_DEFINITION_ARN=$(
+  aws ecs describe-task-definition \
+    --task-definition "${TASK_DEFINITION_FAMILY}" \
+    --query 'taskDefinition.taskDefinitionArn' \
+    --output text
+)
+
+APPSPEC_JSON='
+{
+  "version": 0.0,
+  "Resources": [
+    {
+      "TargetService": {
+        "Type": "AWS::ECS::Service",
+        "Properties": {
+          "TaskDefinition": "'${TASK_DEFINITION_ARN}'",
+          "LoadBalancerInfo": {
+            "ContainerName": "'${CONTAINER_NAME}'",
+            "ContainerPort": '${CONTAINER_PORT}'
+          }
+        }
+      }
+    }
+  ]
+}
+'
+
+echo "${APPSPEC_JSON}"

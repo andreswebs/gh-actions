@@ -1,0 +1,117 @@
+---
+name: Deploy to ECS
+description: Trigger a CodeDeploy deployment to ECS
+
+inputs:
+  aws-region:
+    description: AWS Region
+    required: false
+    default: us-east-1
+  parent-role-to-assume:
+    description: (Optional) Parent IAM role to assume
+    required: false
+    default: ""
+  parent-role-chaining:
+    description: (Optional) Enable parent role chaining?
+    required: false
+    default: "false"
+  role-to-assume:
+    description: (Optional) IAM role to assume
+    required: false
+    default: ""
+  role-chaining:
+    description: (Optional) Enable role chaining?
+    required: false
+    default: "false"
+  cluster:
+    description: The ECS cluster name
+    required: true
+  service:
+    description: The ECS service name
+    required: true
+  task-definition-family:
+    description: The name of the task definition family
+    required: true
+  container-name:
+    description: The container name
+    required: true
+  container-port:
+    description: The container port
+    required: true
+  image-uri:
+    description: The container image URI
+    required: true
+  codedeploy-application:
+    description: The CodeDeploy application
+    required: true
+  codedeploy-deployment-group:
+    description: The CodeDeploy deployment group
+    required: true
+  wait-for-service-stability:
+    description: (Optional) Wait for service stability? Default `true`
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+
+  steps:
+    - name: Set up scripts
+      shell: bash
+      run: |
+        SCRIPTS_PATH="${{ github.action_path }}/scripts"
+        chmod +x "${SCRIPTS_PATH}/aws-ecs-render-appspec-json"
+        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+
+    - name: Configure AWS Credentials
+      if: startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.parent-role-to-assume }}
+        role-chaining: ${{ fromJSON(inputs.parent-role-chaining) }}
+
+    - name: Configure AWS Credentials
+      if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: ${{ inputs.role-to-assume }}
+        role-chaining: ${{ fromJSON(inputs.role-chaining) }}
+
+    - name: Render Task Definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition-family: ${{ inputs.task-definition-family }}
+        container-name: ${{ inputs.container-name }}
+        image: ${{ inputs.image-uri }}
+
+    - name: Render appspec.json
+      id: appspec
+      shell: bash
+      env:
+        TASK_DEFINITION_FAMILY: ${{ inputs.task-definition-family }}
+        CONTAINER_NAME: ${{ inputs.container-name }}
+        CONTAINER_PORT: ${{ inputs.container-port }}
+      run: |
+        aws-ecs-render-appspec-json > appspec.json
+
+    - name: Deploy
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ inputs.service }}
+        cluster: ${{ inputs.cluster }}
+        wait-for-service-stability: ${{ fromJSON(inputs.wait-for-service-stability) }}
+        codedeploy-appspec: appspec.json
+        codedeploy-application: ${{ inputs.codedeploy-application }}
+        codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
+
+    - name: Unset AWS Credentials
+      if: startsWith(inputs.role-to-assume, 'arn:aws:iam::') || startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')
+      uses: aws-actions/configure-aws-credentials@v4
+      continue-on-error: true
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        unset-current-credentials: true

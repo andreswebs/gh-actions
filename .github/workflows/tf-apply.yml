@@ -64,7 +64,7 @@ jobs:
 
       - name: Download .tfbackend
         if: ${{ inputs.tfbackend-is-artifact }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ inputs.tfbackend }}
           path: ${{ inputs.working-directory }}
@@ -77,7 +77,7 @@ jobs:
           tfbackend: ${{ inputs.tfbackend }}
 
       - name: Download ${{ inputs.tfplan }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ inputs.tfplan }}
           path: ${{ inputs.working-directory }}

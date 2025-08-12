@@ -140,7 +140,7 @@ jobs:
           mkdir -p ${{ inputs.config-dir }}
 
       - name: Download ${{ inputs.config-artifact }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         if: ${{ inputs.config-artifact && inputs.config-dir }}
         with:
           name: ${{ inputs.config-artifact }}

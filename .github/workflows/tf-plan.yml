@@ -94,21 +94,21 @@ jobs:
 
       - name: Download .tfvars
         if: ${{ inputs.tfvars }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ inputs.tfvars }}
           path: ${{ inputs.working-directory }}
 
       - name: Download .tfvars (images)
         if: ${{ inputs.images-tfvars }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ inputs.images-tfvars }}
           path: ${{ inputs.working-directory }}
 
       - name: Download .tfbackend
         if: ${{ inputs.tfbackend-is-artifact }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: ${{ inputs.tfbackend }}
           path: ${{ inputs.working-directory }}

@@ -1,6 +1,6 @@
 ---
 name: Deploy to ECS
-description: Trigger a CodeDeploy deployment to ECS
+description: Trigger a deployment to ECS
 
 inputs:
   aws-region:
@@ -32,6 +32,10 @@ inputs:
   task-definition-family:
     description: The name of the task definition family
     required: true
+  run-task:
+    description: (Optional) Run as a stand-alone task? Default `false`.
+    required: false
+    default: "false"
   container-name:
     description: The container name
     required: true
@@ -43,10 +47,12 @@ inputs:
     required: true
   codedeploy-application:
     description: The CodeDeploy application
-    required: true
+    required: false
+    default: ""
   codedeploy-deployment-group:
-    description: The CodeDeploy deployment group
-    required: true
+    description: The CodeDeploy deployment
+    required: false
+    default: ""
   wait-for-service-stability:
     description: (Optional) Wait for service stability? Default `true`
     required: false
@@ -61,11 +67,11 @@ runs:
       run: |
         SCRIPTS_PATH="${{ github.action_path }}/scripts"
         chmod +x "${SCRIPTS_PATH}/aws-ecs-render-appspec-json"
-        echo "${SCRIPTS_PATH}" >> $GITHUB_PATH
+        echo "${SCRIPTS_PATH}" >> "${GITHUB_PATH}"
 
     - name: Configure AWS Credentials
       if: startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v5
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ inputs.parent-role-to-assume }}
@@ -73,7 +79,7 @@ runs:
 
     - name: Configure AWS Credentials
       if: startsWith(inputs.role-to-assume, 'arn:aws:iam::')
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v5
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ inputs.role-to-assume }}
@@ -94,23 +100,27 @@ runs:
         TASK_DEFINITION_FAMILY: ${{ inputs.task-definition-family }}
         CONTAINER_NAME: ${{ inputs.container-name }}
         CONTAINER_PORT: ${{ inputs.container-port }}
+        ENABLE_APPSPEC: ${{ (inputs.codedeploy-application != '' && inputs.codedeploy-deployment-group != '') && 'true' || 'false' }}
       run: |
-        aws-ecs-render-appspec-json > appspec.json
+        if [ "${ENABLE_APPSPEC}" == "true" ]; then
+            aws-ecs-render-appspec-json > appspec.json
+        fi
 
     - name: Deploy
       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
       with:
+        cluster: ${{ inputs.cluster }}
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: ${{ inputs.service }}
-        cluster: ${{ inputs.cluster }}
+        run-task: ${{ fromJSON(inputs.run-task) }}
         wait-for-service-stability: ${{ fromJSON(inputs.wait-for-service-stability) }}
-        codedeploy-appspec: appspec.json
+        codedeploy-appspec: ${{ (inputs.codedeploy-application != '' && inputs.codedeploy-deployment-group != '') && 'appspec.json' || '' }}
         codedeploy-application: ${{ inputs.codedeploy-application }}
         codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
 
     - name: Unset AWS Credentials
       if: startsWith(inputs.role-to-assume, 'arn:aws:iam::') || startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v5
       continue-on-error: true
       with:
         aws-region: ${{ inputs.aws-region }}

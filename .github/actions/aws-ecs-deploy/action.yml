@@ -23,28 +23,36 @@ inputs:
     description: (Optional) Enable role chaining?
     required: false
     default: "false"
+  container-name:
+    description: The container name
+    required: false
+  container-port:
+    description: The container port
+    required: false
+  image-uri:
+    description: The container image URI
+    required: true
+  task-definition-family:
+    description: The name of the task definition family
+    required: true
+
+  ###########
+  ## inputs below are from, with slight modifications:
+  ## https://github.com/aws-actions/amazon-ecs-deploy-task-definition/blob/master/action.yml
+  ###########
+
   cluster:
     description: The ECS cluster name
     required: true
   service:
     description: The ECS service name
-    required: true
-  task-definition-family:
-    description: The name of the task definition family
-    required: true
+    required: false
+
   run-task:
     description: (Optional) Run as a stand-alone task? Default `false`.
     required: false
     default: "false"
-  container-name:
-    description: The container name
-    required: true
-  container-port:
-    description: The container port
-    required: true
-  image-uri:
-    description: The container image URI
-    required: true
+
   codedeploy-application:
     description: The CodeDeploy application
     required: false
@@ -57,6 +65,67 @@ inputs:
     description: (Optional) Wait for service stability? Default `true`
     required: false
     default: "true"
+  wait-for-task-stopped:
+    description: (Optional) Wait for standalone task to stop? Default `true`
+    required: false
+    default: "true"
+  wait-for-minutes:
+    description: Wait time for ECS service to stabilize in minutes
+    required: false
+  codedeploy-deployment-description:
+    description: Description text for the CodeDeploy deployment
+    required: false
+  codedeploy-deployment-config:
+    description: CodeDeploy deployment configuration name
+    required: false
+  force-new-deployment:
+    description: Force a new deployment of the service
+    required: false
+  service-managed-ebs-volume-name:
+    description: Name of the EBS volume to manage
+    required: false
+  service-managed-ebs-volume:
+    description: JSON configuration for EBS service volume settings
+    required: false
+  run-task-container-overrides:
+    description: JSON array of container override objects
+    required: false
+  run-task-security-groups:
+    description: Comma-separated list of security group IDs
+    required: false
+  run-task-subnets:
+    description: Comma-separated list of subnet IDs
+    required: false
+  run-task-assign-public-IP:
+    description: Assign public IP address to task network interface
+    required: false
+  run-task-capacity-provider-strategy:
+    description: JSON array of capacity provider strategy items
+    required: false
+  run-task-launch-type:
+    description: ECS launch type for standalone tasks
+    required: false
+  run-task-started-by:
+    description: Name for the startedBy tag on tasks
+    required: false
+  run-task-tags:
+    description: JSON array of tags to apply
+    required: false
+  run-task-managed-ebs-volume-name:
+    description: Name of the task EBS volume
+    required: false
+  run-task-managed-ebs-volume:
+    description: JSON configuration for task EBS volume settings
+    required: false
+  enable-ecs-managed-tags:
+    description: Enable ECS managed tags on tasks
+    required: false
+  propagate-tags:
+    description: Propagate tags from service to tasks
+    required: false
+  keep-null-value-keys:
+    description: Comma-separated list of keys to preserve empty values
+    required: false
 
 runs:
   using: composite
@@ -113,10 +182,30 @@ runs:
         task-definition: ${{ steps.task-def.outputs.task-definition }}
         service: ${{ inputs.service }}
         run-task: ${{ fromJSON(inputs.run-task) }}
-        wait-for-service-stability: ${{ fromJSON(inputs.wait-for-service-stability) }}
+        wait-for-service-stability: ${{ fromJSON(inputs.wait-for-service-stability) && !fromJSON(inputs.run-task) }}
+        wait-for-task-stopped: ${{ fromJSON(inputs.wait-for-task-stopped) }}
         codedeploy-appspec: ${{ (inputs.codedeploy-application != '' && inputs.codedeploy-deployment-group != '') && 'appspec.json' || '' }}
         codedeploy-application: ${{ inputs.codedeploy-application }}
         codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
+        wait-for-minutes: ${{ inputs.wait-for-minutes }}
+        codedeploy-deployment-description: ${{ inputs.codedeploy-deployment-description }}
+        codedeploy-deployment-config: ${{ inputs.codedeploy-deployment-config }}
+        force-new-deployment: ${{ inputs.force-new-deployment }}
+        service-managed-ebs-volume-name: ${{ inputs.service-managed-ebs-volume-name }}
+        service-managed-ebs-volume: ${{ inputs.service-managed-ebs-volume }}
+        run-task-container-overrides: ${{ inputs.run-task-container-overrides }}
+        run-task-security-groups: ${{ inputs.run-task-security-groups }}
+        run-task-subnets: ${{ inputs.run-task-subnets }}
+        run-task-assign-public-IP: ${{ inputs.run-task-assign-public-IP }}
+        run-task-capacity-provider-strategy: ${{ inputs.run-task-capacity-provider-strategy }}
+        run-task-launch-type: ${{ inputs.run-task-launch-type }}
+        run-task-started-by: ${{ inputs.run-task-started-by }}
+        run-task-tags: ${{ inputs.run-task-tags }}
+        run-task-managed-ebs-volume-name: ${{ inputs.run-task-managed-ebs-volume-name }}
+        run-task-managed-ebs-volume: ${{ inputs.run-task-managed-ebs-volume }}
+        enable-ecs-managed-tags: ${{ inputs.enable-ecs-managed-tags }}
+        propagate-tags: ${{ inputs.propagate-tags }}
+        keep-null-value-keys: ${{ inputs.keep-null-value-keys }}
 
     - name: Unset AWS Credentials
       if: startsWith(inputs.role-to-assume, 'arn:aws:iam::') || startsWith(inputs.parent-role-to-assume, 'arn:aws:iam::')

@@ -165,15 +165,13 @@ runs:
     - name: Render appspec.json
       id: appspec
       shell: bash
+      if: ${{ inputs.codedeploy-application && inputs.codedeploy-deployment-group }}
       env:
         TASK_DEFINITION_FAMILY: ${{ inputs.task-definition-family }}
         CONTAINER_NAME: ${{ inputs.container-name }}
         CONTAINER_PORT: ${{ inputs.container-port }}
-        ENABLE_APPSPEC: ${{ (inputs.codedeploy-application != '' && inputs.codedeploy-deployment-group != '') && 'true' || 'false' }}
       run: |
-        if [ "${ENABLE_APPSPEC}" == "true" ]; then
-            aws-ecs-render-appspec-json > appspec.json
-        fi
+        aws-ecs-render-appspec-json | tee appspec.json
 
     - name: Deploy
       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -184,7 +182,7 @@ runs:
         run-task: ${{ fromJSON(inputs.run-task) }}
         wait-for-service-stability: ${{ fromJSON(inputs.wait-for-service-stability) && !fromJSON(inputs.run-task) }}
         wait-for-task-stopped: ${{ fromJSON(inputs.wait-for-task-stopped) }}
-        codedeploy-appspec: ${{ (inputs.codedeploy-application != '' && inputs.codedeploy-deployment-group != '') && 'appspec.json' || '' }}
+        codedeploy-appspec: appspec.json
         codedeploy-application: ${{ inputs.codedeploy-application }}
         codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
         wait-for-minutes: ${{ inputs.wait-for-minutes }}

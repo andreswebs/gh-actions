@@ -7,11 +7,6 @@ if ! command -v aws &> /dev/null; then
     exit 1
 fi
 
-if ! command -v jq &> /dev/null; then
-    echo "error: jq is not available" >&2
-    exit 1
-fi
-
 TASK_DEFINITION_FAMILY="${TASK_DEFINITION_FAMILY:-}"
 CONTAINER_NAME="${CONTAINER_NAME:-}"
 CONTAINER_PORT="${CONTAINER_PORT:-}"
@@ -29,51 +24,41 @@ function render_appspec() {
     local container_name="${2}"
     local container_port="${3}"
 
-    appspec_json=$(
-        jq \
-            --null-input \
-            --compact-output \
-            --arg task_definition_arn "${task_def_arn}" \
-            '{
-              "version": 0.0,
-              "Resources": [
-                {
-                  "TargetService": {
-                    "Type": "AWS::ECS::Service",
-                    "Properties": {
-                      "TaskDefinition": $task_definition_arn
-                    }
-                  }
+    appspec_json='{
+      "version": 0.0,
+      "Resources": [
+        {
+          "TargetService": {
+            "Type": "AWS::ECS::Service",
+            "Properties": {
+              "TaskDefinition": "'${task_def_arn}'",
+              "LoadBalancerInfo": {
+                  "ContainerName": "'${container_name}'",
+                  "ContainerPort": '${container_port}'
                 }
-              ]
-            }'
-    )
+            }
+          }
+        }
+      ]
+    }'
 
-    if [ -n "${container_name}" ] && [ -n "${container_port}" ]; then
-        appspec_json=$(
-            echo "${appspec_json}" | \
-            jq \
-                --compact-output \
-                --arg container_name "${container_name}" \
-                --argjson container_port "${container_port}" \
-                '.Resources[0].TargetService.Properties.LoadBalancerInfo = {
-                    "ContainerName": $container_name,
-                    "ContainerPort": $container_port
-                }'
-        )
-    fi
-
-    echo "${appspec_json}"
+    echo "${appspec_json}" | tr --delete  '[:space:]'
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [ -z "${TASK_DEFINITION_FAMILY}" ]; then
-        echo "error: TASK_DEFINITION_FAMILY is required but not set" >&2
-        exit 1
-    fi
+    required_env_vars=(
+      "TASK_DEFINITION_FAMILY"
+      "CONTAINER_NAME"
+      "CONTAINER_PORT"
+    )
+
+    for var in "${required_env_vars[@]}"; do
+        if [ -z "${!var}" ]; then
+            echo "error: ${var} is required but not set" >&2
+            exit 1
+        fi
+    done
 
     TASK_DEFINITION_ARN=$(get_task_definition_arn "${TASK_DEFINITION_FAMILY}")
-    APPSPEC_JSON=$(render_appspec "${TASK_DEFINITION_ARN}" "${CONTAINER_NAME}" "${CONTAINER_PORT}")
-
-    echo "${APPSPEC_JSON}"
+    render_appspec "${TASK_DEFINITION_ARN}" "${CONTAINER_NAME}" "${CONTAINER_PORT}"
 fi

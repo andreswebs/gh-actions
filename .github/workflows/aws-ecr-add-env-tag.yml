@@ -37,7 +37,7 @@ jobs:
     steps:
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-region: ${{ inputs.aws-region }}
           role-to-assume: ${{ inputs.role-to-assume }}

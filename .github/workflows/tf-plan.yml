@@ -156,7 +156,7 @@ jobs:
           echo "plan-outcome=${{ steps.tf-plan.outcome }}" >> $GITHUB_OUTPUT
 
       - name: Save ${{ steps.tf-plan.outputs.tfplan }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.tf-plan.outputs.tfplan }}
           path: ${{ inputs.working-directory }}/${{ steps.tf-plan.outputs.tfplan }}

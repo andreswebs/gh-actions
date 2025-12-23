@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup AWS
         uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main
@@ -139,7 +139,7 @@ jobs:
         id: tf-plan
         run: |
           terraform plan -input=false -no-color -out=${{ inputs.tfplan }}
-          echo "tfplan=${{ inputs.tfplan }}" >> $GITHUB_OUTPUT
+          echo "tfplan=${{ inputs.tfplan }}" >> "${GITHUB_OUTPUT}"
 
       - name: Static analysis
         uses: andreswebs/gh-actions/.github/actions/tf-check@main
@@ -151,9 +151,9 @@ jobs:
       - name: Record outcomes
         id: outcomes
         run: |
-          echo "init-outcome=${{ steps.init.outcome }}" >> $GITHUB_OUTPUT
-          echo "validate-outcome=${{ steps.validate.outcome }}" >> $GITHUB_OUTPUT
-          echo "plan-outcome=${{ steps.tf-plan.outcome }}" >> $GITHUB_OUTPUT
+          echo "init-outcome=${{ steps.init.outcome }}" >> "${GITHUB_OUTPUT}"
+          echo "validate-outcome=${{ steps.validate.outcome }}" >> "${GITHUB_OUTPUT}"
+          echo "plan-outcome=${{ steps.tf-plan.outcome }}" >> "${GITHUB_OUTPUT}"
 
       - name: Save ${{ steps.tf-plan.outputs.tfplan }}
         uses: actions/upload-artifact@v4

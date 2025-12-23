@@ -82,9 +82,9 @@ jobs:
       - name: Configure Secret
         id: secret
         run: |
-          echo "gh-app-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" >> $GITHUB_OUTPUT
-          echo "gh-app-client-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-client-id }}}" >> $GITHUB_OUTPUT
-          echo "gh-app-prv-key-b64=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key-base64 }}}" >> $GITHUB_OUTPUT
+          echo "gh-app-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-id }}}" >> "${GITHUB_OUTPUT}"
+          echo "gh-app-client-id=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-client-id }}}" >> "${GITHUB_OUTPUT}"
+          echo "gh-app-prv-key-b64=${${{ env.SECRET_ALIAS }}_${{ inputs.secret-key-app-private-key-base64 }}}" >> "${GITHUB_OUTPUT}"
 
       - name: Get image value
         id: image
@@ -99,7 +99,7 @@ jobs:
           IMAGE: ${{ steps.image.outputs.value }}
         run: |
           APP_VERSION=$(cut -d ':' -f 2 <(echo ${IMAGE}))
-          echo "version=${APP_VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${APP_VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Authenticate Git
         id: auth

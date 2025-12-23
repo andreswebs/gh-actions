@@ -26,9 +26,9 @@ runs:
       id: aws-cli
       run: |
         if ! command -v aws &> /dev/null; then
-          echo "result=not_installed" >> $GITHUB_OUTPUT
+          echo "result=not_installed" >> "${GITHUB_OUTPUT}"
         else
-          echo "result=installed" >> $GITHUB_OUTPUT
+          echo "result=installed" >> "${GITHUB_OUTPUT}"
         fi
 
     - name: Install dependencies if not present

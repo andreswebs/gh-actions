@@ -104,7 +104,7 @@ runs:
     - name: Timestamp
       shell: bash
       run: |
-        echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
+        echo "TIMESTAMP=$(git log -1 --pretty=%ct)" >> "${GITHUB_ENV}"
 
     - name: Platforms
       shell: bash
@@ -115,8 +115,8 @@ runs:
         PLATFORM_ARM64="false"
         [ "${PLATFORMS#*linux/amd64}" != "$PLATFORMS" ] && PLATFORM_AMD64="true"
         [ "${PLATFORMS#*linux/arm64}" != "$PLATFORMS" ] && PLATFORM_ARM64="true"
-        echo "PLATFORM_AMD64=${PLATFORM_AMD64}" >> $GITHUB_ENV
-        echo "PLATFORM_ARM64=${PLATFORM_ARM64}" >> $GITHUB_ENV
+        echo "PLATFORM_AMD64=${PLATFORM_AMD64}" >> "${GITHUB_ENV}"
+        echo "PLATFORM_ARM64=${PLATFORM_ARM64}" >> "${GITHUB_ENV}"
 
     - name: Set up QEMU
       if: ${{ inputs.setup-qemu == 'true' }}
@@ -159,7 +159,7 @@ runs:
         if [ -z "${DOCKERFILE}" ]; then
           DOCKERFILE="${CONTEXT_DIR}/Dockerfile"
         fi
-        echo "dockerfile=${DOCKERFILE}" >> $GITHUB_OUTPUT
+        echo "dockerfile=${DOCKERFILE}" >> "${GITHUB_OUTPUT}"
 
     - name: Format image names
       id: image-names
@@ -240,8 +240,8 @@ runs:
           exit 1
         fi
 
-        echo "image=${image}" >> $GITHUB_OUTPUT
-        echo "images=${images}" >> $GITHUB_OUTPUT
+        echo "image=${image}" >> "${GITHUB_OUTPUT}"
+        echo "images=${images}" >> "${GITHUB_OUTPUT}"
 
     - name: Build and push
       uses: docker/build-push-action@v6

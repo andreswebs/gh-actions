@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -27,11 +26,8 @@ on:
         required: true
         type: string
 
-
 jobs:
-
   apply-kustomization:
-
     runs-on: ${{ inputs.runs-on }}
 
     environment: ${{ inputs.environment }}
@@ -42,9 +38,8 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup AWS
         uses: andreswebs/gh-actions/.github/actions/aws-bootstrap@main

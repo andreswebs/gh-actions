@@ -45,9 +45,9 @@ runs:
         REGISTRY=$(echo "${OUT}" | jq --raw-output '.registry')
         REPO_NAME=$(echo "${OUT}" | jq --raw-output '.repo_name')
         TAG=$(echo "${OUT}" | jq --raw-output '.tag')
-        echo "registry=${REGISTRY}" >> $GITHUB_OUTPUT
-        echo "repo-name=${REPO_NAME}" >> $GITHUB_OUTPUT
-        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+        echo "registry=${REGISTRY}" >> "${GITHUB_OUTPUT}"
+        echo "repo-name=${REPO_NAME}" >> "${GITHUB_OUTPUT}"
+        echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
 
     - name: Build env tag
       shell: bash
@@ -58,7 +58,7 @@ runs:
       run: |
         TIMESTAMP=$(date -u +%s)
         ENV_TAG="${ENV_NAME}}-${TIMESTAMP}-${COMMIT_HASH"
-        echo "value=${ENV_TAG}" >> $GITHUB_OUTPUT
+        echo "value=${ENV_TAG}" >> "${GITHUB_OUTPUT}"
 
     - name: Add env tag
       shell: bash
@@ -71,4 +71,4 @@ runs:
       run: |
         add-image-tag.sh "${REPO_NAME}" "${EXISTING_TAG}" "${NEW_TAG}"
         IMAGE="${REGISTRY}/${REPO_NAME}:${NEW_TAG}"
-        echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+        echo "image=${IMAGE}" >> "${GITHUB_OUTPUT}"

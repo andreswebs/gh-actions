@@ -27,5 +27,5 @@ runs:
       run: |
         FILE=${{ inputs.key }}
         VALUE=$(cat $FILE)
-        echo "value=${VALUE}" >> $GITHUB_OUTPUT
+        echo "value=${VALUE}" >> "${GITHUB_OUTPUT}"
         rm -f "${FILE}"

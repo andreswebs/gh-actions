@@ -38,4 +38,4 @@ runs:
         SOURCE: ${{ inputs.tfvars }}
       run: |
         LIST=$(list-from-tfvars.sh "${SOURCE}")
-        echo "list=${LIST}" >> $GITHUB_OUTPUT
+        echo "list=${LIST}" >> "${GITHUB_OUTPUT}"

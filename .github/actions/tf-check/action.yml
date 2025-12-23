@@ -68,7 +68,7 @@ runs:
         if [ -z "${RESULTS_FILE}" ]; then
           RESULTS_FILE="${TFPLAN_FILE}.checkov.results.sarif"
         fi
-        echo "filename=${RESULTS_FILE}" >> $GITHUB_OUTPUT
+        echo "filename=${RESULTS_FILE}" >> "${GITHUB_OUTPUT}"
 
     - name: Checkov
       shell: bash

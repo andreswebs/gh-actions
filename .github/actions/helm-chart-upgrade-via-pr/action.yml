@@ -66,7 +66,7 @@ runs:
         check_cmd gh
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         token: ${{ inputs.token }}
         repository: ${{ inputs.repository }}
@@ -85,14 +85,14 @@ runs:
         else
           APP_VERSION=$(yq ".appVersion" < "Chart.yaml")
         fi
-        echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+        echo "APP_VERSION=${APP_VERSION}" >> "${GITHUB_ENV}"
 
         if [ -n "${CHART_VERSION}" ]; then
           yq -i ".version = \"${CHART_VERSION}\"" "Chart.yaml"
         else
           CHART_VERSION=$(yq ".version" < "Chart.yaml")
         fi
-        echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+        echo "CHART_VERSION=${CHART_VERSION}" >> "${GITHUB_ENV}"
 
     - name: Create PR
       shell: bash

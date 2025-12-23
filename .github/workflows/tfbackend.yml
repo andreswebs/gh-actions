@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       environment:
         required: true
@@ -32,9 +31,7 @@ on:
         value: ${{ jobs.tfbackend.outputs.tfbackend }}
 
 jobs:
-
   tfbackend:
-
     runs-on: ${{ inputs.runs-on }}
 
     environment: ${{ inputs.environment }}
@@ -43,7 +40,6 @@ jobs:
       tfbackend: ${{ steps.render.outputs.tfbackend }}
 
     steps:
-
       - name: Render .tfbackend
         id: render
         run: |
@@ -54,7 +50,7 @@ jobs:
           region         = "${{ inputs.region }}"
           encrypt        = true
           EOF
-          echo "tfbackend=${{ inputs.tfbackend }}" >> $GITHUB_OUTPUT
+          echo "tfbackend=${{ inputs.tfbackend }}" >> "${GITHUB_OUTPUT}"
 
       - name: Save .tfbackend
         uses: actions/upload-artifact@v4

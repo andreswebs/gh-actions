@@ -50,8 +50,8 @@ runs:
         GH_APP_OR_CLIENT_ID: ${{ inputs.client-id || inputs.app-id }}
       run: |
         echo "${GH_APP_PRV_KEY_B64}" | base64 -d > "${GH_APP_PRV_KEY_PATH}"
-        echo "GH_APP_PRV_KEY_PATH=${GH_APP_PRV_KEY_PATH}" >> $GITHUB_ENV
-        echo "GH_APP_OR_CLIENT_ID=${GH_APP_OR_CLIENT_ID}" >> $GITHUB_ENV
+        echo "GH_APP_PRV_KEY_PATH=${GH_APP_PRV_KEY_PATH}" >> "${GITHUB_ENV}"
+        echo "GH_APP_OR_CLIENT_ID=${GH_APP_OR_CLIENT_ID}" >> "${GITHUB_ENV}"
 
     ## Note:
     ## The `token` value should be masked with:
@@ -66,5 +66,5 @@ runs:
       run: |
         GH_TOKEN=$(gh-app-token.sh)
         # echo "::add-mask::${GH_TOKEN}" # broken
-        echo "token=${GH_TOKEN}" >> $GITHUB_OUTPUT # let's leak it for now
+        echo "token=${GH_TOKEN}" >> "${GITHUB_OUTPUT}" # let's leak it for now
         rm -f "${GH_APP_PRV_KEY_PATH}"

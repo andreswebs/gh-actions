@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -40,7 +39,6 @@ on:
           image tag to be deployed.
 
 jobs:
-
   deploy:
     name: Deploy - ${{ inputs.environment }}
 
@@ -53,9 +51,8 @@ jobs:
         shell: bash
 
     steps:
-
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get image value
         id: image-value

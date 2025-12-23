@@ -27,14 +27,12 @@ inputs:
   client-payload:
     description: The `client_payload` for repository dispatch
     required: false
-    default: '{}'
+    default: "{}"
 
 runs:
-
   using: composite
 
   steps:
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -46,7 +44,7 @@ runs:
       id: token
       shell: bash
       env:
-        AWS_PAGER: ''
+        AWS_PAGER: ""
         PARAM_NAME: ${{ inputs.token-param }}
 
       run: |
@@ -59,7 +57,7 @@ runs:
         )
 
         echo "::add-mask::${TOKEN}"
-        echo "token=${TOKEN}" >> $GITHUB_OUTPUT
+        echo "token=${TOKEN}" >> "${GITHUB_OUTPUT}"
 
     - name: Repository Dispatch
       uses: peter-evans/repository-dispatch@v2

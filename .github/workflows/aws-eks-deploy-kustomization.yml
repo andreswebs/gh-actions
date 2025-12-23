@@ -1,7 +1,6 @@
 ---
 on:
   workflow_call:
-
     inputs:
       runs-on:
         required: true
@@ -50,9 +49,7 @@ on:
           image tag to be deployed.
 
 jobs:
-
   deploy:
-
     name: Deploy - ${{ inputs.environment }}
     runs-on: ${{ inputs.runs-on }}
     environment: ${{ inputs.environment }}
@@ -67,9 +64,8 @@ jobs:
       OCI_REPO_PREFIX: config/${{ inputs.cluster-name }}
 
     steps:
-
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get image value
         id: image-value
@@ -109,7 +105,7 @@ jobs:
           OVERLAY_DIR: ${{ inputs.overlay-dir }}
         run: |
           KUSTOMIZE_DIR=$(mktemp --directory)
-          echo "KUSTOMIZE_DIR=${KUSTOMIZE_DIR}" >> $GITHUB_ENV
+          echo "KUSTOMIZE_DIR=${KUSTOMIZE_DIR}" >> "${GITHUB_ENV}"
           IMAGE_BASE=$(echo "${IMAGE}" | cut -d ':' -f 1)
           cd "${OVERLAY_DIR}" || { echo "unable to access ${OVERLAY_DIR}" && exit 1; }
           kustomize edit set image "${IMAGE_BASE}=${IMAGE}"
@@ -126,10 +122,10 @@ jobs:
         run: |
           OCI_REPO="oci://${ECR_REGISTRY}/${OCI_REPO_PREFIX}/${KUSTOMIZATION_NAME}"
           OCI_ARTIFACT="${OCI_REPO}:${ARTIFACT_TAG}"
-          echo "OCI_REPO=${OCI_REPO}" >> $GITHUB_ENV
-          echo "OCI_ARTIFACT=${OCI_ARTIFACT}" >> $GITHUB_ENV
-          echo "KUSTOMIZATION_NAME=${KUSTOMIZATION_NAME}" >> $GITHUB_ENV
-          echo "KUSTOMIZATION_NAMESPACE=${KUSTOMIZATION_NAMESPACE}" >> $GITHUB_ENV
+          echo "OCI_REPO=${OCI_REPO}" >> "${GITHUB_ENV}"
+          echo "OCI_ARTIFACT=${OCI_ARTIFACT}" >> "${GITHUB_ENV}"
+          echo "KUSTOMIZATION_NAME=${KUSTOMIZATION_NAME}" >> "${GITHUB_ENV}"
+          echo "KUSTOMIZATION_NAMESPACE=${KUSTOMIZATION_NAMESPACE}" >> "${GITHUB_ENV}"
 
       - name: Push OCI artifact
         env:

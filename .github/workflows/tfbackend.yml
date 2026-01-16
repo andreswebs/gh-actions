@@ -53,7 +53,7 @@ jobs:
           echo "tfbackend=${{ inputs.tfbackend }}" >> "${GITHUB_OUTPUT}"
 
       - name: Save .tfbackend
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.render.outputs.tfbackend }}
           path: ./${{ steps.render.outputs.tfbackend }}
